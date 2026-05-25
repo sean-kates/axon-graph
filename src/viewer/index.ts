@@ -92,6 +92,19 @@ function initGraph(raw: Parameters<typeof propagate>[0]): void {
       drawLink(link as GraphLink, ctx, frameTime);
     })
     .linkCanvasObjectMode(() => "replace")
+    .linkPointerAreaPaint((link: object, color: string, ctx: CanvasRenderingContext2D) => {
+      const l = link as GraphLink;
+      if (l.isTether) return;
+      const src = l.source as unknown as GraphNode;
+      const tgt = l.target as unknown as GraphNode;
+      if (typeof src !== "object" || typeof tgt !== "object") return;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 12;
+      ctx.beginPath();
+      ctx.moveTo(src.x ?? 0, src.y ?? 0);
+      ctx.lineTo(tgt.x ?? 0, tgt.y ?? 0);
+      ctx.stroke();
+    })
     .onNodeClick((node: object) => {
       const n = node as GraphNode;
       if (n.isSatellite) {
@@ -104,7 +117,7 @@ function initGraph(raw: Parameters<typeof propagate>[0]): void {
     })
     .onLinkClick((link: object) => {
       const l = link as GraphLink;
-      if (!l.isSynthetic && l.sourceEdge) showPanel(l.sourceEdge);
+      if (!l.isTether && l.sourceEdge) showPanel(l.sourceEdge);
     });
 
   (graph as any).d3Force("charge").strength(-400);

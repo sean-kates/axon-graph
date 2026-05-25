@@ -60,6 +60,18 @@ export function AxonGraph({
         drawLink(link, ctx, frameTimeRef.current);
       })
       .linkCanvasObjectMode(() => "replace")
+      .linkPointerAreaPaint((link: GraphLink, color: string, ctx: CanvasRenderingContext2D) => {
+        if (link.isTether) return;
+        const src = link.source as unknown as GraphNode;
+        const tgt = link.target as unknown as GraphNode;
+        if (typeof src !== "object" || typeof tgt !== "object") return;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 12;
+        ctx.beginPath();
+        ctx.moveTo(src.x ?? 0, src.y ?? 0);
+        ctx.lineTo(tgt.x ?? 0, tgt.y ?? 0);
+        ctx.stroke();
+      })
       .onNodeClick((node: GraphNode) => {
         const rg = resolvedGraphRef.current;
         if (!rg) return;
@@ -72,7 +84,7 @@ export function AxonGraph({
         }
       })
       .onLinkClick((link: GraphLink) => {
-        if (!link.isSynthetic && link.sourceEdge) setSelected(link.sourceEdge);
+        if (!link.isTether && link.sourceEdge) setSelected(link.sourceEdge);
       });
 
     // Tune forces: more repulsion between nodes, short tether for satellites.
