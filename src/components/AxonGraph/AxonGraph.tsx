@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from "react";
 import ForceGraph from "force-graph";
 import type { ResolvedNode, ResolvedEdge, ResolvedGraph } from "../../types";
 import { usePolling } from "./usePolling";
-import { buildGraphData, type GraphNode, type GraphLink } from "./graphAdapters";
+import { buildGraphData, buildOrbitConfigs, type GraphNode, type GraphLink, type OrbitConfig } from "./graphAdapters";
 import { InfoPanel } from "./InfoPanel";
 import { drawNode, drawLink } from "./drawing";
 
@@ -12,6 +12,8 @@ export interface AxonGraphProps {
   width?: number;
   height?: number;
   backgroundColor?: string;
+  satelliteOrbit?: boolean;
+  satelliteOrbitSpeed?: number;
 }
 
 const DEFAULT_POLL = 30_000;
@@ -22,6 +24,8 @@ export function AxonGraph({
   width = 900,
   height = 600,
   backgroundColor = "#070a10",
+  satelliteOrbit = true,
+  satelliteOrbitSpeed = 0.5,
 }: AxonGraphProps) {
   const { data, error, loading, lastUpdated } = usePolling(configUrl, pollInterval);
   const [selected, setSelected] = useState<ResolvedNode | ResolvedEdge | null>(null);
@@ -34,6 +38,14 @@ export function AxonGraph({
   const frameTimeRef = useRef(0);
   const resolvedGraphRef = useRef<ResolvedGraph | null>(null);
   const firstDataRef = useRef(true);
+  const graphNodesRef = useRef<GraphNode[]>([]);
+  const orbitConfigRef = useRef<Map<string, OrbitConfig>>(new Map());
+  const orbitEnabledRef = useRef(satelliteOrbit);
+  const orbitSpeedRef = useRef(satelliteOrbitSpeed);
+
+  // Keep orbit refs in sync with props so the animation loop always sees current values.
+  useEffect(() => { orbitEnabledRef.current = satelliteOrbit; }, [satelliteOrbit]);
+  useEffect(() => { orbitSpeedRef.current = satelliteOrbitSpeed; }, [satelliteOrbitSpeed]);
 
   // Mount the graph once.
   useEffect(() => {
@@ -51,6 +63,21 @@ export function AxonGraph({
       .cooldownTicks(Infinity)
       .onRenderFramePre(() => {
         frameTimeRef.current += 0.04;
+        if (!orbitEnabledRef.current) return;
+        const nodes = graphNodesRef.current;
+        const orbitConfig = orbitConfigRef.current;
+        if (nodes.length === 0) return;
+        const nodeById = new Map(nodes.map((n) => [n.id, n]));
+        for (const node of nodes) {
+          if (!node.isSatellite || !node.parentId) continue;
+          const parent = nodeById.get(node.parentId);
+          if (!parent || parent.x == null || parent.y == null) continue;
+          const cfg = orbitConfig.get(node.id);
+          if (!cfg) continue;
+          const angle = frameTimeRef.current * orbitSpeedRef.current + cfg.phase;
+          node.fx = parent.x + cfg.radius * Math.cos(angle);
+          node.fy = parent.y + cfg.radius * Math.sin(angle);
+        }
       })
       .nodeCanvasObject((node: GraphNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
         drawNode(node, ctx, frameTimeRef.current, resolvedGraphRef.current, globalScale);
@@ -88,10 +115,10 @@ export function AxonGraph({
       });
 
     // Tune forces: more repulsion between nodes, short tether for satellites.
-    instance.d3Force("charge").strength(-400);
-    instance.d3Force("link").distance((link: GraphLink) =>
-      link.id.endsWith("__sat_link") ? 18 : 80
-    );
+    instance.d3Force("charge").strength((node: GraphNode) => node.isSatellite ? 0 : -600);
+    instance.d3Force("link")
+      .distance((link: GraphLink) => link.id.endsWith("__sat_link") ? 18 : 80)
+      .strength((link: GraphLink) => link.id.endsWith("__sat_link") ? 0 : 1);
 
     graphRef.current = instance;
 
@@ -105,7 +132,10 @@ export function AxonGraph({
   useEffect(() => {
     if (!data || !graphRef.current) return;
     resolvedGraphRef.current = data;
-    graphRef.current.graphData(buildGraphData(data));
+    const gd = buildGraphData(data);
+    orbitConfigRef.current = buildOrbitConfigs(gd.nodes);
+    graphNodesRef.current = gd.nodes;
+    graphRef.current.graphData(gd);
     const delay = firstDataRef.current ? 800 : 600;
     firstDataRef.current = false;
     setTimeout(() => graphRef.current?.zoomToFit(400, 60), delay);
@@ -115,6 +145,7 @@ export function AxonGraph({
   useEffect(() => {
     if (!graphRef.current) return;
     graphRef.current.width(width).height(height);
+    graphRef.current.zoomToFit(400, 60);
   }, [width, height]);
 
   return (
