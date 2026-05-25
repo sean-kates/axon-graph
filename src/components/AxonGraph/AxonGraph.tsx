@@ -33,6 +33,7 @@ export function AxonGraph({
   const graphRef = useRef<any>(null);
   const frameTimeRef = useRef(0);
   const resolvedGraphRef = useRef<ResolvedGraph | null>(null);
+  const firstDataRef = useRef(true);
 
   // Mount the graph once.
   useEffect(() => {
@@ -93,7 +94,10 @@ export function AxonGraph({
     if (!data || !graphRef.current) return;
     resolvedGraphRef.current = data;
     graphRef.current.graphData(buildGraphData(data));
-  }, [data]);
+    const delay = firstDataRef.current ? 800 : 600;
+    firstDataRef.current = false;
+    setTimeout(() => graphRef.current?.zoomToFit(400, 60), delay);
+  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync width/height prop changes.
   useEffect(() => {

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "axon-graph-cli",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["dist/cli/index.js", "--config", "demo/axon-graph.json"],
+      "port": 4242
+    }
+  ]
+}

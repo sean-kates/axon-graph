@@ -68,6 +68,7 @@ function initGraph(raw: Parameters<typeof propagate>[0]): void {
 
   if (graph) {
     graph.graphData({ nodes, links });
+    setTimeout(() => graph!.zoomToFit(400, 60), 600);
     return;
   }
 
@@ -110,6 +111,8 @@ function initGraph(raw: Parameters<typeof propagate>[0]): void {
   (graph as any).d3Force("link").distance((link: GraphLink) =>
     link.id.endsWith("__sat_link") ? 18 : 80
   );
+
+  setTimeout(() => graph!.zoomToFit(400, 60), 800);
 
   window.addEventListener("resize", () => {
     graph!.width(window.innerWidth).height(window.innerHeight);
