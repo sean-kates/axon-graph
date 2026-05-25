@@ -31,12 +31,12 @@
   "edgeTypes": {
     "cron": {
       "label": "Cron Job",
-      "style": "solid",
+      "style": "animated",
       "color": "#4A90D9"
     },
     "event": {
       "label": "Event Triggered",
-      "style": "dashed",
+      "style": "animated",
       "color": "#7B68EE"
     },
     "streaming": {
