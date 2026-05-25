@@ -38,6 +38,35 @@ export interface GraphData {
   links: GraphLink[];
 }
 
+export interface OrbitConfig {
+  radius: number;
+  phase: number;
+}
+
+export function buildOrbitConfigs(nodes: GraphNode[]): Map<string, OrbitConfig> {
+  const configs = new Map<string, OrbitConfig>();
+  const parentGroups = new Map<string, GraphNode[]>();
+
+  for (const node of nodes) {
+    if (node.isSatellite && node.parentId) {
+      const group = parentGroups.get(node.parentId) ?? [];
+      group.push(node);
+      parentGroups.set(node.parentId, group);
+    }
+  }
+
+  const nodeById = new Map(nodes.map((n) => [n.id, n]));
+  for (const [parentId, sats] of parentGroups) {
+    const parent = nodeById.get(parentId);
+    const radius = (parent?.nodeSize ?? 8) * 2.8;
+    sats.forEach((sat, idx) => {
+      configs.set(sat.id, { radius, phase: (idx / sats.length) * 2 * Math.PI });
+    });
+  }
+
+  return configs;
+}
+
 export function buildGraphData(graph: ResolvedGraph): GraphData {
   const nodes: GraphNode[] = [];
   const links: GraphLink[] = [];

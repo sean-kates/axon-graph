@@ -4,7 +4,9 @@
     "propagation": {
       "decayFactor": 0.5,
       "maxDepth": 5
-    }
+    },
+    "satelliteOrbit": true,
+    "satelliteOrbitSpeed": 0.1
   },
   "nodeTypes": {
     "core": {

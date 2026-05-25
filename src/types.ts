@@ -43,6 +43,8 @@ export interface PropagationConfig {
 export interface GraphConfig {
   pollInterval: number;
   propagation: PropagationConfig;
+  satelliteOrbit?: boolean;
+  satelliteOrbitSpeed?: number;
 }
 
 export interface RawNode {

@@ -1,6 +1,6 @@
 import ForceGraph from "force-graph";
 import { propagate } from "../engine";
-import { buildGraphData, type GraphNode, type GraphLink } from "../components/AxonGraph/graphAdapters";
+import { buildGraphData, buildOrbitConfigs, type GraphNode, type GraphLink, type OrbitConfig } from "../components/AxonGraph/graphAdapters";
 import { drawNode, drawLink } from "../components/AxonGraph/drawing";
 import type { ResolvedGraph, ResolvedNode, ResolvedEdge } from "../types";
 
@@ -61,10 +61,14 @@ function showPanel(selected: ResolvedNode | ResolvedEdge): void {
 let frameTime = 0;
 let resolvedGraph: ResolvedGraph | null = null;
 let graph: any = null;
+let currentNodes: GraphNode[] = [];
+let orbitConfig: Map<string, OrbitConfig> = new Map();
 
 function initGraph(raw: Parameters<typeof propagate>[0]): void {
   resolvedGraph = propagate(raw);
   const { nodes, links } = buildGraphData(resolvedGraph);
+  orbitConfig = buildOrbitConfigs(nodes);
+  currentNodes = nodes;
 
   if (graph) {
     graph.graphData({ nodes, links });
@@ -83,6 +87,20 @@ function initGraph(raw: Parameters<typeof propagate>[0]): void {
     .cooldownTicks(Infinity)
     .onRenderFramePre(() => {
       frameTime += 0.04;
+      if (resolvedGraph?.config.satelliteOrbit === false) return;
+      if (currentNodes.length === 0) return;
+      const speed = resolvedGraph?.config.satelliteOrbitSpeed ?? 0.5;
+      const nodeById = new Map(currentNodes.map((n) => [n.id, n]));
+      for (const node of currentNodes) {
+        if (!node.isSatellite || !node.parentId) continue;
+        const parent = nodeById.get(node.parentId);
+        if (!parent || parent.x == null || parent.y == null) continue;
+        const cfg = orbitConfig.get(node.id);
+        if (!cfg) continue;
+        const angle = frameTime * speed + cfg.phase;
+        node.fx = parent.x + cfg.radius * Math.cos(angle);
+        node.fy = parent.y + cfg.radius * Math.sin(angle);
+      }
     })
     .nodeCanvasObject((node: object, ctx: CanvasRenderingContext2D, globalScale: number) => {
       drawNode(node as GraphNode, ctx, frameTime, resolvedGraph, globalScale);
@@ -120,15 +138,16 @@ function initGraph(raw: Parameters<typeof propagate>[0]): void {
       if (!l.isTether && l.sourceEdge) showPanel(l.sourceEdge);
     });
 
-  (graph as any).d3Force("charge").strength(-400);
-  (graph as any).d3Force("link").distance((link: GraphLink) =>
-    link.id.endsWith("__sat_link") ? 18 : 80
-  );
+  (graph as any).d3Force("charge").strength((node: GraphNode) => node.isSatellite ? 0 : -600);
+  (graph as any).d3Force("link")
+    .distance((link: GraphLink) => link.id.endsWith("__sat_link") ? 18 : 80)
+    .strength((link: GraphLink) => link.id.endsWith("__sat_link") ? 0 : 1);
 
   setTimeout(() => graph!.zoomToFit(400, 60), 800);
 
   window.addEventListener("resize", () => {
     graph!.width(window.innerWidth).height(window.innerHeight);
+    graph!.zoomToFit(400, 60);
   });
 }
 
