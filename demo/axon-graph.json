@@ -1,0 +1,300 @@
+{
+  "config": {
+    "pollInterval": 30000,
+    "propagation": {
+      "decayFactor": 0.5,
+      "maxDepth": 5
+    }
+  },
+  "nodeTypes": {
+    "core": {
+      "label": "Core",
+      "shape": "hexagon",
+      "color": "#4A90D9"
+    },
+    "transform": {
+      "label": "Transform",
+      "shape": "circle",
+      "color": "#7B68EE"
+    },
+    "warehouse": {
+      "label": "Warehouse",
+      "shape": "diamond",
+      "color": "#20B2AA"
+    },
+    "staging": {
+      "label": "Staging",
+      "shape": "square",
+      "color": "#FF8C42"
+    }
+  },
+  "edgeTypes": {
+    "cron": {
+      "label": "Cron Job",
+      "style": "solid",
+      "color": "#4A90D9"
+    },
+    "event": {
+      "label": "Event Triggered",
+      "style": "dashed",
+      "color": "#7B68EE"
+    },
+    "streaming": {
+      "label": "Streaming",
+      "style": "animated",
+      "color": "#20B2AA"
+    }
+  },
+  "nodes": [
+    {
+      "id": "raw_events",
+      "label": "raw_events",
+      "type": "core",
+      "size": 2.0,
+      "healthRollup": "any",
+      "health": {
+        "status": "failing",
+        "updatedAt": "2026-05-25T05:00:00Z",
+        "checks": [
+          {
+            "name": "row_count",
+            "status": "failing",
+            "message": "Expected >10k rows/hour, got 0 for 2 hours",
+            "checkedAt": "2026-05-25T05:00:00Z"
+          },
+          {
+            "name": "schema_drift",
+            "status": "healthy",
+            "message": "Schema matches expected",
+            "checkedAt": "2026-05-25T05:00:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "users",
+      "label": "users",
+      "type": "core",
+      "size": 1.8,
+      "healthRollup": "all",
+      "health": {
+        "status": "healthy",
+        "updatedAt": "2026-05-25T05:00:00Z",
+        "checks": [
+          {
+            "name": "row_count",
+            "status": "healthy",
+            "message": "1.2M rows, within expected range",
+            "checkedAt": "2026-05-25T05:00:00Z"
+          },
+          {
+            "name": "freshness",
+            "status": "healthy",
+            "message": "Updated 8 minutes ago",
+            "checkedAt": "2026-05-25T05:00:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "products",
+      "label": "products",
+      "type": "core",
+      "size": 1.5,
+      "healthRollup": "any",
+      "health": {
+        "status": "degraded",
+        "updatedAt": "2026-05-25T04:45:00Z",
+        "checks": [
+          {
+            "name": "freshness",
+            "status": "degraded",
+            "message": "Last updated 3.5 hours ago, expected < 2h",
+            "checkedAt": "2026-05-25T05:00:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "enriched_events",
+      "label": "enriched_events",
+      "type": "transform",
+      "size": 1.6,
+      "healthRollup": "any",
+      "health": {
+        "status": "healthy",
+        "updatedAt": "2026-05-25T05:05:00Z",
+        "checks": [
+          {
+            "name": "null_rate",
+            "status": "healthy",
+            "message": "Null rate 0.02%, within threshold",
+            "checkedAt": "2026-05-25T05:05:00Z"
+          },
+          {
+            "name": "row_count",
+            "status": "healthy",
+            "message": "Row count delta nominal",
+            "checkedAt": "2026-05-25T05:05:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "session_facts",
+      "label": "session_facts",
+      "type": "warehouse",
+      "size": 2.2,
+      "healthRollup": "majority",
+      "health": {
+        "status": "healthy",
+        "updatedAt": "2026-05-25T05:10:00Z",
+        "checks": [
+          {
+            "name": "dupe_check",
+            "status": "healthy",
+            "message": "0 duplicate session IDs",
+            "checkedAt": "2026-05-25T05:10:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "revenue_facts",
+      "label": "revenue_facts",
+      "type": "warehouse",
+      "size": 2.5,
+      "healthRollup": "any",
+      "health": {
+        "status": "healthy",
+        "updatedAt": "2026-05-25T05:08:00Z",
+        "checks": [
+          {
+            "name": "total_revenue_sanity",
+            "status": "healthy",
+            "message": "Daily revenue within ±15% of trailing 7d avg",
+            "checkedAt": "2026-05-25T05:08:00Z"
+          },
+          {
+            "name": "null_revenue",
+            "status": "healthy",
+            "message": "No null revenue rows",
+            "checkedAt": "2026-05-25T05:08:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "ml_features",
+      "label": "ml_features",
+      "type": "transform",
+      "size": 1.4,
+      "healthRollup": "any",
+      "health": {
+        "status": "healthy",
+        "updatedAt": "2026-05-25T04:50:00Z",
+        "checks": [
+          {
+            "name": "feature_drift",
+            "status": "healthy",
+            "message": "Feature distributions stable",
+            "checkedAt": "2026-05-25T04:50:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    }
+  ],
+  "edges": [
+    {
+      "id": "job_enrich_events",
+      "label": "enrich_events",
+      "sources": ["raw_events", "users"],
+      "target": "enriched_events",
+      "type": "cron",
+      "health": {
+        "status": "healthy",
+        "lastRun": "2026-05-25T05:05:00Z",
+        "nextExpected": "2026-05-25T06:05:00Z",
+        "checks": [
+          {
+            "name": "last_run_status",
+            "status": "healthy",
+            "message": "Job completed in 3m 12s",
+            "checkedAt": "2026-05-25T05:05:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "job_session_agg",
+      "label": "session_agg",
+      "sources": ["enriched_events"],
+      "target": "session_facts",
+      "type": "cron",
+      "health": {
+        "status": "healthy",
+        "lastRun": "2026-05-25T05:10:00Z",
+        "nextExpected": "2026-05-25T06:10:00Z",
+        "checks": [
+          {
+            "name": "last_run_status",
+            "status": "healthy",
+            "message": "Job completed in 1m 44s",
+            "checkedAt": "2026-05-25T05:10:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "job_revenue_calc",
+      "label": "revenue_calc",
+      "sources": ["enriched_events", "products"],
+      "target": "revenue_facts",
+      "type": "event",
+      "health": {
+        "status": "healthy",
+        "lastRun": "2026-05-25T05:08:00Z",
+        "nextExpected": "2026-05-25T05:38:00Z",
+        "checks": [
+          {
+            "name": "last_run_status",
+            "status": "healthy",
+            "message": "Job completed in 2m 01s",
+            "checkedAt": "2026-05-25T05:08:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "stream_ml_features",
+      "label": "feature_stream",
+      "sources": ["enriched_events"],
+      "target": "ml_features",
+      "type": "streaming",
+      "health": {
+        "status": "healthy",
+        "lastRun": "2026-05-25T05:00:00Z",
+        "nextExpected": "2026-05-25T05:05:00Z",
+        "checks": [
+          {
+            "name": "lag",
+            "status": "healthy",
+            "message": "Consumer lag < 100ms",
+            "checkedAt": "2026-05-25T05:00:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    }
+  ]
+}

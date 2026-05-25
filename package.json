@@ -1,0 +1,60 @@
+{
+  "name": "axon-graph",
+  "version": "0.1.0",
+  "description": "Data pipeline health visualization library with a nervous system / star chart aesthetic",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "bin": {
+    "axon-graph": "./dist/cli/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "type-check": "tsc --noEmit",
+    "cli": "node dist/cli/index.js"
+  },
+  "keywords": [
+    "data-pipeline",
+    "visualization",
+    "health-monitoring",
+    "react",
+    "graph"
+  ],
+  "author": "Sean Kates",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "dependencies": {
+    "force-graph": "^1.43.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@vitest/coverage-v8": "^3.0.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  },
+  "optionalDependencies": {
+    "express": "^4.21.0",
+    "open": "^10.1.0"
+  }
+}
