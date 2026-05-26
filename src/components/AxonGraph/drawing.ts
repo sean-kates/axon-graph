@@ -96,10 +96,66 @@ export function drawNode(
   ctx.fillText(node.label, x, y + r + fontSize * 0.8);
 }
 
+// PULSE_SPEED controls how fast dots travel source→target
+// 0.0002 = slow, meditative (good for low-frequency cron jobs)
+// 0.0004 = default, feels alive without being distracting
+// 0.0008 = fast, urgent (consider for failing edges)
+// Could be driven by edge.expectedCadenceSeconds in future
+const PULSE_SPEED = 0.0004;
+
+function drawPulse(
+  ctx: CanvasRenderingContext2D,
+  link: GraphLink,
+  globalTime: number
+): void {
+  const source = link.source as unknown as GraphNode;
+  const target = link.target as unknown as GraphNode;
+  if (typeof source !== "object" || typeof target !== "object") return;
+
+  const sx = source.x ?? 0;
+  const sy = source.y ?? 0;
+  const tx = target.x ?? 0;
+  const ty = target.y ?? 0;
+
+  const offsets = link.edgeType === "streaming" ? [0, 0.33, 0.66] : [0];
+
+  for (const offset of offsets) {
+    const t = (globalTime * PULSE_SPEED + (link.phase ?? 0) + offset) % 1;
+
+    let opacity: number;
+    if (link.visualStatus === "failing") {
+      // fades out, never arrives — dies at ~60% of the way
+      opacity = t < 0.6 ? 1 - t / 0.6 : 0;
+    } else if (link.visualStatus === "degraded") {
+      // arrives but dims progressively
+      opacity = 1 - t * 0.7;
+    } else {
+      // healthy / at_risk — full brightness the whole way
+      opacity = 1;
+    }
+
+    if (opacity <= 0) continue;
+
+    const x = sx + (tx - sx) * t;
+    const y = sy + (ty - sy) * t;
+    const dotRadius = link.visualStatus === "failing" ? 3 : 2;
+
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    ctx.beginPath();
+    ctx.arc(x, y, dotRadius, 0, 2 * Math.PI);
+    ctx.fillStyle = link.color;
+    ctx.shadowColor = link.color;
+    ctx.shadowBlur = link.visualStatus === "failing" ? 12 : 6;
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
 export function drawLink(
   link: GraphLink,
   ctx: CanvasRenderingContext2D,
-  frameTime: number
+  globalTime: number
 ): void {
   const src = link.source as unknown as GraphNode;
   const tgt = link.target as unknown as GraphNode;
@@ -110,7 +166,7 @@ export function drawLink(
   const tx = tgt.x ?? 0;
   const ty = tgt.y ?? 0;
 
-  // Satellite tether: thin dotted line, no arrowhead
+  // Satellite tether: thin dotted line, no arrowhead, no pulse
   if (link.isTether) {
     ctx.strokeStyle = link.color;
     ctx.lineWidth = 0.5;
@@ -126,11 +182,8 @@ export function drawLink(
   ctx.strokeStyle = link.color;
   ctx.lineWidth = 1.5;
 
-  if (link.style === "dashed") {
+  if (link.style === "dashed" || link.style === "animated") {
     ctx.setLineDash([6, 4]);
-  } else if (link.style === "animated") {
-    ctx.setLineDash([8, 6]);
-    ctx.lineDashOffset = -(frameTime * 3) % 20;
   } else {
     ctx.setLineDash([]);
   }
@@ -140,7 +193,6 @@ export function drawLink(
   ctx.lineTo(tx, ty);
   ctx.stroke();
   ctx.setLineDash([]);
-  ctx.lineDashOffset = 0;
 
   if (!link.isSynthetic) {
     const angle = Math.atan2(ty - sy, tx - sx);
@@ -152,4 +204,6 @@ export function drawLink(
     ctx.fillStyle = link.color;
     ctx.fill();
   }
+
+  drawPulse(ctx, link, globalTime);
 }

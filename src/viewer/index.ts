@@ -60,6 +60,7 @@ function showPanel(selected: ResolvedNode | ResolvedEdge): void {
 // ── App ───────────────────────────────────────────────────────────────────────
 
 let frameTime = 0;
+let globalTime = 0;
 let resolvedGraph: ResolvedGraph | null = null;
 let graph: any = null;
 let currentNodes: GraphNode[] = [];
@@ -88,6 +89,7 @@ function initGraph(raw: Parameters<typeof propagate>[0]): void {
     .cooldownTicks(Infinity)
     .onRenderFramePre(() => {
       frameTime += 0.04;
+      globalTime = performance.now();
       if (resolvedGraph?.config.satelliteOrbit === false) return;
       if (currentNodes.length === 0) return;
       const speed = resolvedGraph?.config.satelliteOrbitSpeed ?? 0.5;
@@ -108,7 +110,7 @@ function initGraph(raw: Parameters<typeof propagate>[0]): void {
     })
     .nodeCanvasObjectMode(() => "replace")
     .linkCanvasObject((link: object, ctx: CanvasRenderingContext2D) => {
-      drawLink(link as GraphLink, ctx, frameTime);
+      drawLink(link as GraphLink, ctx, globalTime);
     })
     .linkCanvasObjectMode(() => "replace")
     .linkPointerAreaPaint((link: object, color: string, ctx: CanvasRenderingContext2D) => {

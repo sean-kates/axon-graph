@@ -96,7 +96,7 @@ export function propagate(graph: RawGraph): ResolvedGraph {
   // Resolve nodes with continuous finalScore
   const resolvedNodes: ResolvedNode[] = graph.nodes.map((node) => {
     const reportedStatus = node.health.status;
-    const reportedScore = REPORTED_SCORES[reportedStatus];
+    const reportedScore = REPORTED_SCORES[reportedStatus] ?? 0;
     const influence = nodeInfluence.get(node.id);
     const influenceScore = influence?.score ?? 0;
     const finalScore = Math.max(reportedScore, influenceScore);
