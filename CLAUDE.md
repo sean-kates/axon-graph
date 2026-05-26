@@ -55,6 +55,8 @@ demo/
 
 **Engine and renderer are strictly separated.** `src/engine/` has zero rendering imports. The propagation engine is the core value of the package — don't mix concerns.
 
+**`ReportedStatus` and `VisualStatus` are distinct types.** `ReportedStatus` (`healthy | failing | unknown`) is what the backend writes to the database and sends over the wire. `VisualStatus` (`healthy | at_risk | degraded | failing`) is what the propagation engine derives for rendering. `degraded` is never written to the database or sent by the backend — it is always derived by the propagation engine from upstream failing nodes. This is a hard invariant.
+
 **`reportedStatus` is never mutated.** `health.status` is what the backend said. `visualStatus` is what the graph shows. `visualReason` explains the difference. The info panel always shows both.
 
 **force-graph is mounted imperatively in React** via `useEffect` + `useRef<HTMLDivElement>`. The graph instance is never recreated on re-render — data/size changes go through refs. `new (ForceGraph as any)()` is the instantiation pattern (kapsule class typing workaround).
@@ -64,9 +66,9 @@ demo/
 ## Key design decisions
 
 **Propagation model:**
-- Base scores: `failing=1.0`, `degraded=0.6`, `unknown=0.3`, `healthy=0`
-- Score at hop N: `baseScore * decayFactor^N`
-- Score ≥ 0.8 → `failing`, ≥ 0.4 → `degraded`, else no upstream effect
+- Reported scores: `failing=1.0`, `unknown=0.3`, `healthy=0`
+- Score at hop N: `reportedScore * decayFactor^N`
+- Score ≥ 0.8 → `failing`, ≥ 0.4 → `degraded`, ≥ 0.1 → `at_risk`, else `healthy`
 - `visualStatus = worst(reportedStatus, derivedUpstreamStatus)`
 
 **Fan-in edges** (multiple sources → one target): rendered as a synthetic hub node in the graph data. The hub has `isSatellite: false` and no `sourceNode`. Don't promote multi-target jobs to nodes — that's a schema concern.

@@ -1,24 +1,24 @@
-export type HealthStatus = "healthy" | "degraded" | "failing" | "unknown";
-export type VisualStatus = HealthStatus | "at_risk";
+export type ReportedStatus = "healthy" | "failing" | "unknown";
+export type VisualStatus = "healthy" | "at_risk" | "degraded" | "failing";
 export type HealthRollup = "any" | "all" | "majority";
 export type EdgeStyle = "solid" | "dashed" | "animated";
 export type NodeShape = "hexagon" | "circle" | "diamond" | "square";
 
 export interface HealthCheck {
   name: string;
-  status: HealthStatus;
+  status: ReportedStatus;
   message: string;
   checkedAt: string;
 }
 
 export interface NodeHealth {
-  status: HealthStatus;
+  status: ReportedStatus;
   updatedAt: string;
   checks: HealthCheck[];
 }
 
 export interface EdgeHealth {
-  status: HealthStatus;
+  status: ReportedStatus;
   lastRun?: string;
   nextExpected?: string;
   checks: HealthCheck[];
@@ -82,7 +82,7 @@ export interface ResolvedNode extends RawNode {
 }
 
 export interface ResolvedEdge extends RawEdge {
-  visualStatus: HealthStatus; // edges don't emit at_risk; at_risk is node-only
+  visualStatus: VisualStatus;
   visualReason: string | null;
 }
 

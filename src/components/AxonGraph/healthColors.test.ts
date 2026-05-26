@@ -44,11 +44,15 @@ describe("scoreToGlow", () => {
 });
 
 describe("statusToScore", () => {
-  it("maps each status to its base score", () => {
+  it("maps reported statuses to their base scores", () => {
     expect(statusToScore("healthy")).toBe(0);
     expect(statusToScore("unknown")).toBe(0.3);
-    expect(statusToScore("degraded")).toBe(0.6);
     expect(statusToScore("failing")).toBe(1.0);
+  });
+
+  it("maps visual-only statuses to their scores", () => {
+    expect(statusToScore("at_risk")).toBe(0.25);
+    expect(statusToScore("degraded")).toBe(0.6);
   });
 });
 

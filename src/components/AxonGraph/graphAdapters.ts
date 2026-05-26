@@ -1,4 +1,4 @@
-import type { ResolvedGraph, ResolvedNode, ResolvedEdge, HealthStatus } from "../../types";
+import type { ResolvedGraph, ResolvedNode, ResolvedEdge, ReportedStatus } from "../../types";
 import { scoreToColor, statusToScore } from "./healthColors";
 
 const BASE_SATELLITE_SIZE = 4;
@@ -11,7 +11,7 @@ export interface GraphNode {
   isSatellite: boolean;
   parentId?: string;
   checkName?: string;
-  checkStatus?: HealthStatus;
+  checkStatus?: ReportedStatus;
   sourceNode?: ResolvedNode;
   // set by react-force-graph at runtime
   x?: number;
