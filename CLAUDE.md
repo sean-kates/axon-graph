@@ -1,6 +1,14 @@
 # axon-graph
 
-Data pipeline health visualization npm package. Visualizes nodes (tables) connected by edges (jobs) with live health status that propagates downstream through the graph using a decay model.
+Data pipeline health visualization npm package.
+
+## Git workflow
+
+**Never push directly to `main`.** All changes must go through a feature branch and PR:
+1. Create a branch (`git checkout -b feat/...` or `fix/...`)
+2. Commit there
+3. `git push -u origin <branch>`
+4. Open a PR targeting `main` with `gh pr create` Visualizes nodes (tables) connected by edges (jobs) with live health status that propagates downstream through the graph using a decay model.
 
 ## Commands
 
