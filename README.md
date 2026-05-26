@@ -81,11 +81,11 @@ Fan-in edges (multiple sources → one target) are handled: the worst source inf
     }
   },
   "nodeTypes": {
-    "core": { "label": "Core", "shape": "hexagon", "color": "#4A90D9" }
+    "core": { "label": "Core", "shape": "hexagon" }
     // shapes: hexagon | circle | diamond | square
   },
   "edgeTypes": {
-    "cron": { "label": "Cron Job", "style": "solid", "color": "#888" }
+    "cron": { "label": "Cron Job", "style": "solid" }
     // styles: solid | dashed | animated
   },
   "nodes": [
@@ -132,7 +132,7 @@ Fan-in edges (multiple sources → one target) are handled: the worst source inf
 ## Visual design
 
 - **Force-directed, DAG-aware** layout (top-down)
-- **Node color** = base hue from type, shifted by health: green glow (healthy) → amber (degraded) → red (failing) → grey (unknown)
+- **Node color** = health-derived: green (healthy) → amber (degraded) → red (failing), driven by a continuous score-based gradient
 - **Satellites** = small orbiting dots, one per health check, always visible
 - **Edges**: solid / dashed / animated (streaming) based on type; color driven by health
 - **Info panel**: click any node or edge to see `reportedStatus` vs `visualStatus` with reason string and full check list

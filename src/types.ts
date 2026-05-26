@@ -27,13 +27,11 @@ export interface EdgeHealth {
 export interface NodeType {
   label: string;
   shape: NodeShape;
-  color: string;
 }
 
 export interface EdgeType {
   label: string;
   style: EdgeStyle;
-  color: string;
 }
 
 export interface PropagationConfig {
