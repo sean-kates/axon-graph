@@ -1,4 +1,4 @@
-import type { HealthStatus } from "../../types";
+import type { ReportedStatus, VisualStatus } from "../../types";
 
 export const DEFAULT_HEALTH_STOPS = [
   { score: 0.0, r: 0,   g: 255, b: 136 }, // #00ff88 healthy green
@@ -6,11 +6,12 @@ export const DEFAULT_HEALTH_STOPS = [
   { score: 1.0, r: 255, g: 51,  b: 51  }, // #ff3333 failing red
 ];
 
-export function statusToScore(status: HealthStatus): number {
+export function statusToScore(status: ReportedStatus | VisualStatus): number {
   switch (status) {
     case "failing":  return 1.0;
     case "degraded": return 0.6;
     case "unknown":  return 0.3;
+    case "at_risk":  return 0.25;
     case "healthy":  return 0;
   }
 }

@@ -64,7 +64,7 @@ describe("propagate — isolated nodes", () => {
     expect(resolved.nodes[0].visualStatus).toBe("failing");
   });
 
-  it("passes through unknown node unchanged", () => {
+  it("unknown node with no upstream visualizes as at_risk", () => {
     const graph = makeGraph({
       nodes: [
         {
@@ -79,7 +79,9 @@ describe("propagate — isolated nodes", () => {
       ],
     });
     const resolved = propagate(graph);
-    expect(resolved.nodes[0].visualStatus).toBe("unknown");
+    // unknown is a reported concept; visually it renders as at_risk
+    expect(resolved.nodes[0].visualStatus).toBe("at_risk");
+    expect(resolved.nodes[0].health.status).toBe("unknown");
   });
 });
 
@@ -285,7 +287,7 @@ describe("propagate — fan-in edges", () => {
 });
 
 describe("propagate — healthRollup", () => {
-  it("healthRollup=all: node with one failing check but others healthy stays degraded not failing", () => {
+  it("healthRollup=all: node reported failing with no upstream stays failing", () => {
     const graph = makeGraph({
       nodes: [
         {
@@ -295,7 +297,7 @@ describe("propagate — healthRollup", () => {
           size: 1,
           healthRollup: "all",
           health: {
-            status: "degraded",
+            status: "failing",
             updatedAt: "",
             checks: [
               {
@@ -317,8 +319,7 @@ describe("propagate — healthRollup", () => {
       ],
     });
     const resolved = propagate(graph);
-    // reportedStatus from health.status is degraded, visualStatus stays degraded (no upstream)
-    expect(resolved.nodes[0].visualStatus).toBe("degraded");
+    expect(resolved.nodes[0].visualStatus).toBe("failing");
   });
 });
 
@@ -404,7 +405,7 @@ describe("propagate — edge visualStatus", () => {
 });
 
 describe("propagate — finalScore continuous model", () => {
-  function singleNode(status: "healthy" | "degraded" | "failing" | "unknown") {
+  function singleNode(status: "healthy" | "failing" | "unknown") {
     return makeGraph({
       nodes: [{ id: "a", label: "A", type: "core", size: 1, healthRollup: "any", health: { status, updatedAt: "", checks: [] }, meta: {} }],
     });
@@ -416,10 +417,10 @@ describe("propagate — finalScore continuous model", () => {
     expect(n.visualStatus).toBe("healthy");
   });
 
-  it("degraded node, no upstream → finalScore=0.60", () => {
-    const n = propagate(singleNode("degraded")).nodes[0];
-    expect(n.finalScore).toBeCloseTo(0.6);
-    expect(n.visualStatus).toBe("degraded");
+  it("unknown node, no upstream → finalScore=0.30, visualStatus=at_risk", () => {
+    const n = propagate(singleNode("unknown")).nodes[0];
+    expect(n.finalScore).toBeCloseTo(0.3);
+    expect(n.visualStatus).toBe("at_risk");
   });
 
   it("failing node → finalScore=1.00", () => {
@@ -459,10 +460,10 @@ describe("propagate — finalScore continuous model", () => {
   });
 
   it("failing node own score floors a weaker upstream (max semantics)", () => {
-    // A (degraded) → B (failing): B's own score 1.0 > upstream 0.3 = finalScore stays 1.0
+    // A (unknown) → B (failing): B's own score 1.0 > upstream 0.15 = finalScore stays 1.0
     const graph = makeGraph({
       nodes: [
-        { id: "a", label: "A", type: "core", size: 1, healthRollup: "any", health: { status: "degraded", updatedAt: "", checks: [] }, meta: {} },
+        { id: "a", label: "A", type: "core", size: 1, healthRollup: "any", health: { status: "unknown", updatedAt: "", checks: [] }, meta: {} },
         { id: "b", label: "B", type: "core", size: 1, healthRollup: "any", health: { status: "failing", updatedAt: "", checks: [] }, meta: {} },
       ],
       edges: [{ id: "e1", label: "job", sources: ["a"], target: "b", type: "cron", health: { status: "healthy", checks: [] }, meta: {} }],
@@ -475,6 +476,22 @@ describe("propagate — finalScore continuous model", () => {
 });
 
 describe("propagate — reported vs visual", () => {
+  it("degraded is output-only: healthy node downstream of failing derives visualStatus 'degraded'", () => {
+    const graph = makeGraph({
+      nodes: [
+        { id: "a", label: "A", type: "core", size: 1, healthRollup: "any", health: { status: "failing", updatedAt: "", checks: [] }, meta: {} },
+        { id: "b", label: "B", type: "core", size: 1, healthRollup: "any", health: { status: "healthy", updatedAt: "", checks: [] }, meta: {} },
+      ],
+      edges: [
+        { id: "e1", label: "job", sources: ["a"], target: "b", type: "cron", health: { status: "healthy", checks: [] }, meta: {} },
+      ],
+    });
+    const resolved = propagate(graph);
+    const b = resolved.nodes.find((n) => n.id === "b")!;
+    expect(b.health.status).toBe("healthy");   // reported: never degraded
+    expect(b.visualStatus).toBe("degraded");   // visual: derived from upstream
+  });
+
   it("keeps reportedStatus (health.status) unchanged", () => {
     const graph = makeGraph({
       nodes: [
