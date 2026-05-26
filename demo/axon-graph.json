@@ -3,7 +3,7 @@
     "pollInterval": 30000,
     "propagation": {
       "decayFactor": 0.75,
-      "maxDepth": 5
+      "maxDepth": 6
     },
     "satelliteOrbit": true,
     "satelliteOrbitSpeed": 0.1
@@ -42,25 +42,31 @@
   },
   "nodes": [
     {
-      "id": "raw_events",
-      "label": "raw_events",
+      "id": "raw_transactions",
+      "label": "raw_transactions",
       "type": "core",
-      "size": 2.0,
+      "size": 2.2,
       "healthRollup": "any",
       "health": {
         "status": "failing",
         "updatedAt": "2026-05-25T05:00:00Z",
         "checks": [
           {
-            "name": "row_count",
+            "name": "event_volume",
             "status": "failing",
-            "message": "Expected >10k rows/hour, got 0 for 2 hours",
+            "message": "0 transactions ingested in last 45 min — expected ~200/min from payment processor webhook",
             "checkedAt": "2026-05-25T05:00:00Z"
           },
           {
             "name": "schema_drift",
             "status": "healthy",
-            "message": "Schema matches expected",
+            "message": "Schema matches payment processor contract",
+            "checkedAt": "2026-05-25T05:00:00Z"
+          },
+          {
+            "name": "connector_status",
+            "status": "failing",
+            "message": "Webhook connector reporting HTTP 503 from upstream since 04:17Z",
             "checkedAt": "2026-05-25T05:00:00Z"
           }
         ]
@@ -68,55 +74,139 @@
       "meta": {}
     },
     {
-      "id": "users",
-      "label": "users",
+      "id": "raw_fraud_signals",
+      "label": "raw_fraud_signals",
+      "type": "core",
+      "size": 1.8,
+      "healthRollup": "any",
+      "health": {
+        "status": "degraded",
+        "updatedAt": "2026-05-25T04:55:00Z",
+        "checks": [
+          {
+            "name": "api_latency",
+            "status": "degraded",
+            "message": "Fraud vendor API p99 latency 8.2s — SLA is <500ms, causing partial signal loss",
+            "checkedAt": "2026-05-25T04:55:00Z"
+          },
+          {
+            "name": "signal_volume",
+            "status": "degraded",
+            "message": "Signal throughput at 23% of expected — vendor throttling suspected",
+            "checkedAt": "2026-05-25T04:55:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "raw_ledger_entries",
+      "label": "raw_ledger_entries",
       "type": "core",
       "size": 1.8,
       "healthRollup": "all",
       "health": {
         "status": "healthy",
-        "updatedAt": "2026-05-25T05:00:00Z",
+        "updatedAt": "2026-05-25T05:02:00Z",
         "checks": [
           {
             "name": "row_count",
             "status": "healthy",
-            "message": "1.2M rows, within expected range",
-            "checkedAt": "2026-05-25T05:00:00Z"
+            "message": "4,312 ledger entries in last hour, within expected range",
+            "checkedAt": "2026-05-25T05:02:00Z"
+          },
+          {
+            "name": "debit_credit_balance",
+            "status": "healthy",
+            "message": "Debits and credits balanced to the penny",
+            "checkedAt": "2026-05-25T05:02:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "raw_authorizations",
+      "label": "raw_authorizations",
+      "type": "core",
+      "size": 1.6,
+      "healthRollup": "all",
+      "health": {
+        "status": "healthy",
+        "updatedAt": "2026-05-25T05:01:00Z",
+        "checks": [
+          {
+            "name": "event_volume",
+            "status": "healthy",
+            "message": "188/min auth events — nominal for this time of day",
+            "checkedAt": "2026-05-25T05:01:00Z"
+          },
+          {
+            "name": "schema_drift",
+            "status": "healthy",
+            "message": "Schema matches card network spec v2.4",
+            "checkedAt": "2026-05-25T05:01:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "dim_accounts",
+      "label": "dim_accounts",
+      "type": "core",
+      "size": 1.7,
+      "healthRollup": "all",
+      "health": {
+        "status": "healthy",
+        "updatedAt": "2026-05-25T04:58:00Z",
+        "checks": [
+          {
+            "name": "row_count",
+            "status": "healthy",
+            "message": "3.4M active accounts — CDC running normally",
+            "checkedAt": "2026-05-25T04:58:00Z"
           },
           {
             "name": "freshness",
             "status": "healthy",
-            "message": "Updated 8 minutes ago",
-            "checkedAt": "2026-05-25T05:00:00Z"
+            "message": "Last CDC change applied 6 minutes ago",
+            "checkedAt": "2026-05-25T04:58:00Z"
           }
         ]
       },
       "meta": {}
     },
     {
-      "id": "products",
-      "label": "products",
+      "id": "dim_merchants",
+      "label": "dim_merchants",
       "type": "core",
       "size": 1.5,
-      "healthRollup": "any",
+      "healthRollup": "all",
       "health": {
-        "status": "failing",
-        "updatedAt": "2026-05-25T04:45:00Z",
+        "status": "healthy",
+        "updatedAt": "2026-05-25T04:50:00Z",
         "checks": [
           {
-            "name": "freshness",
-            "status": "failing",
-            "message": "Last updated 5.5 hours ago, expected < 2h — feed appears stalled",
-            "checkedAt": "2026-05-25T05:00:00Z"
+            "name": "row_count",
+            "status": "healthy",
+            "message": "142K merchant records — no unexpected deletions",
+            "checkedAt": "2026-05-25T04:50:00Z"
+          },
+          {
+            "name": "mcc_coverage",
+            "status": "healthy",
+            "message": "100% of active merchants have MCC codes",
+            "checkedAt": "2026-05-25T04:50:00Z"
           }
         ]
       },
       "meta": {}
     },
     {
-      "id": "enriched_events",
-      "label": "enriched_events",
-      "type": "transform",
+      "id": "stg_transactions",
+      "label": "stg_transactions",
+      "type": "staging",
       "size": 1.6,
       "healthRollup": "any",
       "health": {
@@ -126,13 +216,13 @@
           {
             "name": "null_rate",
             "status": "healthy",
-            "message": "Null rate 0.02%, within threshold",
+            "message": "Null rate 0.01% on required fields — within threshold",
             "checkedAt": "2026-05-25T05:05:00Z"
           },
           {
-            "name": "row_count",
+            "name": "amount_sign_check",
             "status": "healthy",
-            "message": "Row count delta nominal",
+            "message": "All transaction amounts positive",
             "checkedAt": "2026-05-25T05:05:00Z"
           }
         ]
@@ -140,19 +230,109 @@
       "meta": {}
     },
     {
-      "id": "session_facts",
-      "label": "session_facts",
+      "id": "stg_fraud_signals",
+      "label": "stg_fraud_signals",
+      "type": "staging",
+      "size": 1.4,
+      "healthRollup": "any",
+      "health": {
+        "status": "healthy",
+        "updatedAt": "2026-05-25T05:00:00Z",
+        "checks": [
+          {
+            "name": "signal_type_coverage",
+            "status": "healthy",
+            "message": "All 12 signal types present in last batch",
+            "checkedAt": "2026-05-25T05:00:00Z"
+          },
+          {
+            "name": "score_range",
+            "status": "healthy",
+            "message": "Risk scores within [0, 100] range",
+            "checkedAt": "2026-05-25T05:00:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "stg_ledger",
+      "label": "stg_ledger",
+      "type": "staging",
+      "size": 1.4,
+      "healthRollup": "all",
+      "health": {
+        "status": "healthy",
+        "updatedAt": "2026-05-25T05:03:00Z",
+        "checks": [
+          {
+            "name": "dedup",
+            "status": "healthy",
+            "message": "0 duplicate entry IDs",
+            "checkedAt": "2026-05-25T05:03:00Z"
+          },
+          {
+            "name": "currency_codes",
+            "status": "healthy",
+            "message": "All ISO 4217 currency codes valid",
+            "checkedAt": "2026-05-25T05:03:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "stg_authorizations",
+      "label": "stg_authorizations",
+      "type": "staging",
+      "size": 1.3,
+      "healthRollup": "all",
+      "health": {
+        "status": "healthy",
+        "updatedAt": "2026-05-25T05:02:00Z",
+        "checks": [
+          {
+            "name": "dedup",
+            "status": "healthy",
+            "message": "0 duplicate auth codes in 1-hour window",
+            "checkedAt": "2026-05-25T05:02:00Z"
+          },
+          {
+            "name": "response_code_coverage",
+            "status": "healthy",
+            "message": "Approve/decline/refer codes all present — distribution normal",
+            "checkedAt": "2026-05-25T05:02:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "fct_payments",
+      "label": "fct_payments",
       "type": "warehouse",
-      "size": 2.2,
-      "healthRollup": "majority",
+      "size": 2.5,
+      "healthRollup": "any",
       "health": {
         "status": "healthy",
         "updatedAt": "2026-05-25T05:10:00Z",
         "checks": [
           {
-            "name": "dupe_check",
+            "name": "row_count",
             "status": "healthy",
-            "message": "0 duplicate session IDs",
+            "message": "Row count delta nominal for last load",
+            "checkedAt": "2026-05-25T05:10:00Z"
+          },
+          {
+            "name": "referential_integrity",
+            "status": "healthy",
+            "message": "100% of account_ids resolve to dim_accounts",
+            "checkedAt": "2026-05-25T05:10:00Z"
+          },
+          {
+            "name": "amount_sanity",
+            "status": "healthy",
+            "message": "Total payment volume within ±20% of 7d trailing avg",
             "checkedAt": "2026-05-25T05:10:00Z"
           }
         ]
@@ -160,25 +340,25 @@
       "meta": {}
     },
     {
-      "id": "revenue_facts",
-      "label": "revenue_facts",
+      "id": "fct_fraud_decisions",
+      "label": "fct_fraud_decisions",
       "type": "warehouse",
-      "size": 2.5,
+      "size": 1.8,
       "healthRollup": "any",
       "health": {
         "status": "healthy",
         "updatedAt": "2026-05-25T05:08:00Z",
         "checks": [
           {
-            "name": "total_revenue_sanity",
+            "name": "decision_coverage",
             "status": "healthy",
-            "message": "Daily revenue within ±15% of trailing 7d avg",
+            "message": "99.7% of transactions have a fraud decision",
             "checkedAt": "2026-05-25T05:08:00Z"
           },
           {
-            "name": "null_revenue",
+            "name": "decline_rate",
             "status": "healthy",
-            "message": "No null revenue rows",
+            "message": "Decline rate 1.4% — within expected band",
             "checkedAt": "2026-05-25T05:08:00Z"
           }
         ]
@@ -186,20 +366,194 @@
       "meta": {}
     },
     {
-      "id": "ml_features",
-      "label": "ml_features",
-      "type": "transform",
-      "size": 1.4,
+      "id": "fct_reconciliation",
+      "label": "fct_reconciliation",
+      "type": "warehouse",
+      "size": 2.0,
       "healthRollup": "any",
       "health": {
         "status": "healthy",
-        "updatedAt": "2026-05-25T04:50:00Z",
+        "updatedAt": "2026-05-25T05:12:00Z",
+        "checks": [
+          {
+            "name": "match_rate",
+            "status": "healthy",
+            "message": "98.9% of payments matched to ledger entries — within SLA",
+            "checkedAt": "2026-05-25T05:12:00Z"
+          },
+          {
+            "name": "unmatched_amount",
+            "status": "healthy",
+            "message": "Unmatched amount $0 for prior settlement window",
+            "checkedAt": "2026-05-25T05:12:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "fct_disputes",
+      "label": "fct_disputes",
+      "type": "warehouse",
+      "size": 1.6,
+      "healthRollup": "any",
+      "health": {
+        "status": "healthy",
+        "updatedAt": "2026-05-25T05:11:00Z",
+        "checks": [
+          {
+            "name": "auth_capture_match",
+            "status": "healthy",
+            "message": "Auth-to-capture match rate 99.2%",
+            "checkedAt": "2026-05-25T05:11:00Z"
+          },
+          {
+            "name": "chargeback_rate",
+            "status": "healthy",
+            "message": "Chargeback rate 0.08% — below 0.1% threshold",
+            "checkedAt": "2026-05-25T05:11:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "fct_settlements",
+      "label": "fct_settlements",
+      "type": "warehouse",
+      "size": 2.2,
+      "healthRollup": "any",
+      "health": {
+        "status": "healthy",
+        "updatedAt": "2026-05-25T05:15:00Z",
+        "checks": [
+          {
+            "name": "settlement_balance",
+            "status": "healthy",
+            "message": "Settlement totals match reconciliation output",
+            "checkedAt": "2026-05-25T05:15:00Z"
+          },
+          {
+            "name": "cutoff_completeness",
+            "status": "healthy",
+            "message": "All transactions through 04:00Z included in settlement batch",
+            "checkedAt": "2026-05-25T05:15:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "ml_fraud_model",
+      "label": "ml_fraud_model",
+      "type": "transform",
+      "size": 1.6,
+      "healthRollup": "any",
+      "health": {
+        "status": "healthy",
+        "updatedAt": "2026-05-25T04:55:00Z",
         "checks": [
           {
             "name": "feature_drift",
             "status": "healthy",
-            "message": "Feature distributions stable",
-            "checkedAt": "2026-05-25T04:50:00Z"
+            "message": "PSI scores stable on all 38 features — no retraining triggered",
+            "checkedAt": "2026-05-25T04:55:00Z"
+          },
+          {
+            "name": "inference_lag",
+            "status": "healthy",
+            "message": "Model inference lag 82ms p99",
+            "checkedAt": "2026-05-25T04:55:00Z"
+          },
+          {
+            "name": "score_distribution",
+            "status": "healthy",
+            "message": "Score distribution matches baseline within 2 std dev",
+            "checkedAt": "2026-05-25T04:55:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "mart_risk_scores",
+      "label": "mart_risk_scores",
+      "type": "transform",
+      "size": 1.5,
+      "healthRollup": "any",
+      "health": {
+        "status": "healthy",
+        "updatedAt": "2026-05-25T05:07:00Z",
+        "checks": [
+          {
+            "name": "coverage",
+            "status": "healthy",
+            "message": "Risk scores present for 100% of active accounts",
+            "checkedAt": "2026-05-25T05:07:00Z"
+          },
+          {
+            "name": "high_risk_rate",
+            "status": "healthy",
+            "message": "High-risk accounts 3.1% of total — within expected range",
+            "checkedAt": "2026-05-25T05:07:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "mart_regulatory_reports",
+      "label": "mart_regulatory_reports",
+      "type": "warehouse",
+      "size": 1.8,
+      "healthRollup": "any",
+      "health": {
+        "status": "healthy",
+        "updatedAt": "2026-05-25T05:20:00Z",
+        "checks": [
+          {
+            "name": "completeness",
+            "status": "healthy",
+            "message": "All required SAR and CTR fields populated",
+            "checkedAt": "2026-05-25T05:20:00Z"
+          },
+          {
+            "name": "threshold_checks",
+            "status": "healthy",
+            "message": "No unreported transactions above $10k threshold",
+            "checkedAt": "2026-05-25T05:20:00Z"
+          },
+          {
+            "name": "submission_window",
+            "status": "healthy",
+            "message": "Next scheduled submission in 19 hours — all data present",
+            "checkedAt": "2026-05-25T05:20:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "mart_revenue_dashboard",
+      "label": "mart_revenue_dashboard",
+      "type": "warehouse",
+      "size": 1.5,
+      "healthRollup": "any",
+      "health": {
+        "status": "healthy",
+        "updatedAt": "2026-05-25T05:18:00Z",
+        "checks": [
+          {
+            "name": "kpi_freshness",
+            "status": "healthy",
+            "message": "All revenue KPIs updated within last 20 min",
+            "checkedAt": "2026-05-25T05:18:00Z"
+          },
+          {
+            "name": "revenue_sanity",
+            "status": "healthy",
+            "message": "Net revenue within ±15% of 7d trailing avg",
+            "checkedAt": "2026-05-25T05:18:00Z"
           }
         ]
       },
@@ -208,20 +562,20 @@
   ],
   "edges": [
     {
-      "id": "job_enrich_events",
-      "label": "enrich_events",
-      "sources": ["raw_events", "users"],
-      "target": "enriched_events",
-      "type": "cron",
+      "id": "job_load_transactions",
+      "label": "load_transactions",
+      "sources": ["raw_transactions"],
+      "target": "stg_transactions",
+      "type": "event",
       "health": {
         "status": "healthy",
         "lastRun": "2026-05-25T05:05:00Z",
-        "nextExpected": "2026-05-25T06:05:00Z",
+        "nextExpected": "2026-05-25T05:10:00Z",
         "checks": [
           {
             "name": "last_run_status",
             "status": "healthy",
-            "message": "Job completed in 3m 12s",
+            "message": "Job completed in 0m 48s",
             "checkedAt": "2026-05-25T05:05:00Z"
           }
         ]
@@ -229,52 +583,10 @@
       "meta": {}
     },
     {
-      "id": "job_session_agg",
-      "label": "session_agg",
-      "sources": ["enriched_events"],
-      "target": "session_facts",
-      "type": "cron",
-      "health": {
-        "status": "healthy",
-        "lastRun": "2026-05-25T05:10:00Z",
-        "nextExpected": "2026-05-25T06:10:00Z",
-        "checks": [
-          {
-            "name": "last_run_status",
-            "status": "healthy",
-            "message": "Job completed in 1m 44s",
-            "checkedAt": "2026-05-25T05:10:00Z"
-          }
-        ]
-      },
-      "meta": {}
-    },
-    {
-      "id": "job_revenue_calc",
-      "label": "revenue_calc",
-      "sources": ["enriched_events", "products"],
-      "target": "revenue_facts",
-      "type": "event",
-      "health": {
-        "status": "healthy",
-        "lastRun": "2026-05-25T05:08:00Z",
-        "nextExpected": "2026-05-25T05:38:00Z",
-        "checks": [
-          {
-            "name": "last_run_status",
-            "status": "healthy",
-            "message": "Job completed in 2m 01s",
-            "checkedAt": "2026-05-25T05:08:00Z"
-          }
-        ]
-      },
-      "meta": {}
-    },
-    {
-      "id": "stream_ml_features",
-      "label": "feature_stream",
-      "sources": ["enriched_events"],
-      "target": "ml_features",
+      "id": "stream_fraud_signals",
+      "label": "ingest_fraud_signals",
+      "sources": ["raw_fraud_signals"],
+      "target": "stg_fraud_signals",
       "type": "streaming",
       "health": {
         "status": "healthy",
@@ -282,10 +594,241 @@
         "nextExpected": "2026-05-25T05:05:00Z",
         "checks": [
           {
-            "name": "lag",
+            "name": "consumer_lag",
             "status": "healthy",
-            "message": "Consumer lag < 100ms",
+            "message": "Consumer lag 120ms — within 1s SLA",
             "checkedAt": "2026-05-25T05:00:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "job_load_ledger",
+      "label": "load_ledger",
+      "sources": ["raw_ledger_entries"],
+      "target": "stg_ledger",
+      "type": "cron",
+      "health": {
+        "status": "healthy",
+        "lastRun": "2026-05-25T05:03:00Z",
+        "nextExpected": "2026-05-25T06:03:00Z",
+        "checks": [
+          {
+            "name": "last_run_status",
+            "status": "healthy",
+            "message": "Job completed in 1m 22s",
+            "checkedAt": "2026-05-25T05:03:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "job_load_authorizations",
+      "label": "load_authorizations",
+      "sources": ["raw_authorizations"],
+      "target": "stg_authorizations",
+      "type": "event",
+      "health": {
+        "status": "healthy",
+        "lastRun": "2026-05-25T05:02:00Z",
+        "nextExpected": "2026-05-25T05:07:00Z",
+        "checks": [
+          {
+            "name": "last_run_status",
+            "status": "healthy",
+            "message": "Job completed in 0m 31s",
+            "checkedAt": "2026-05-25T05:02:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "job_build_fct_payments",
+      "label": "build_fct_payments",
+      "sources": ["stg_transactions", "dim_accounts"],
+      "target": "fct_payments",
+      "type": "event",
+      "health": {
+        "status": "healthy",
+        "lastRun": "2026-05-25T05:10:00Z",
+        "nextExpected": "2026-05-25T05:15:00Z",
+        "checks": [
+          {
+            "name": "last_run_status",
+            "status": "healthy",
+            "message": "Job completed in 2m 14s",
+            "checkedAt": "2026-05-25T05:10:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "stream_fraud_decisions",
+      "label": "score_fraud",
+      "sources": ["stg_fraud_signals", "dim_merchants"],
+      "target": "fct_fraud_decisions",
+      "type": "streaming",
+      "health": {
+        "status": "healthy",
+        "lastRun": "2026-05-25T05:08:00Z",
+        "nextExpected": "2026-05-25T05:13:00Z",
+        "checks": [
+          {
+            "name": "throughput",
+            "status": "healthy",
+            "message": "Scoring 180 decisions/min — nominal",
+            "checkedAt": "2026-05-25T05:08:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "job_reconcile",
+      "label": "reconcile_payments",
+      "sources": ["fct_payments", "stg_ledger"],
+      "target": "fct_reconciliation",
+      "type": "cron",
+      "health": {
+        "status": "healthy",
+        "lastRun": "2026-05-25T05:12:00Z",
+        "nextExpected": "2026-05-25T06:12:00Z",
+        "checks": [
+          {
+            "name": "last_run_status",
+            "status": "healthy",
+            "message": "Job completed in 4m 37s",
+            "checkedAt": "2026-05-25T05:12:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "job_build_disputes",
+      "label": "build_disputes",
+      "sources": ["fct_payments", "stg_authorizations"],
+      "target": "fct_disputes",
+      "type": "cron",
+      "health": {
+        "status": "healthy",
+        "lastRun": "2026-05-25T05:11:00Z",
+        "nextExpected": "2026-05-25T06:11:00Z",
+        "checks": [
+          {
+            "name": "last_run_status",
+            "status": "healthy",
+            "message": "Job completed in 1m 58s",
+            "checkedAt": "2026-05-25T05:11:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "job_settle",
+      "label": "calculate_settlements",
+      "sources": ["fct_payments", "fct_reconciliation"],
+      "target": "fct_settlements",
+      "type": "cron",
+      "health": {
+        "status": "healthy",
+        "lastRun": "2026-05-25T05:15:00Z",
+        "nextExpected": "2026-05-25T06:15:00Z",
+        "checks": [
+          {
+            "name": "last_run_status",
+            "status": "healthy",
+            "message": "Job completed in 3m 02s",
+            "checkedAt": "2026-05-25T05:15:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "stream_ml_features",
+      "label": "build_fraud_features",
+      "sources": ["stg_fraud_signals", "fct_payments"],
+      "target": "ml_fraud_model",
+      "type": "streaming",
+      "health": {
+        "status": "healthy",
+        "lastRun": "2026-05-25T05:00:00Z",
+        "nextExpected": "2026-05-25T05:05:00Z",
+        "checks": [
+          {
+            "name": "feature_lag",
+            "status": "healthy",
+            "message": "Feature pipeline lag 82ms p99",
+            "checkedAt": "2026-05-25T05:00:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "job_risk_scores",
+      "label": "aggregate_risk_scores",
+      "sources": ["ml_fraud_model", "fct_fraud_decisions"],
+      "target": "mart_risk_scores",
+      "type": "cron",
+      "health": {
+        "status": "healthy",
+        "lastRun": "2026-05-25T05:07:00Z",
+        "nextExpected": "2026-05-25T06:07:00Z",
+        "checks": [
+          {
+            "name": "last_run_status",
+            "status": "healthy",
+            "message": "Job completed in 2m 41s",
+            "checkedAt": "2026-05-25T05:07:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "job_regulatory",
+      "label": "build_regulatory_reports",
+      "sources": ["fct_reconciliation", "fct_settlements"],
+      "target": "mart_regulatory_reports",
+      "type": "cron",
+      "health": {
+        "status": "healthy",
+        "lastRun": "2026-05-25T05:20:00Z",
+        "nextExpected": "2026-05-25T06:20:00Z",
+        "checks": [
+          {
+            "name": "last_run_status",
+            "status": "healthy",
+            "message": "Job completed in 5m 18s",
+            "checkedAt": "2026-05-25T05:20:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "job_revenue",
+      "label": "build_revenue_dashboard",
+      "sources": ["fct_payments", "fct_settlements"],
+      "target": "mart_revenue_dashboard",
+      "type": "cron",
+      "health": {
+        "status": "healthy",
+        "lastRun": "2026-05-25T05:18:00Z",
+        "nextExpected": "2026-05-25T06:18:00Z",
+        "checks": [
+          {
+            "name": "last_run_status",
+            "status": "healthy",
+            "message": "Job completed in 1m 53s",
+            "checkedAt": "2026-05-25T05:18:00Z"
           }
         ]
       },
