@@ -8,11 +8,11 @@ const baseConfig = {
 };
 
 const baseNodeTypes = {
-  core: { label: "Core", shape: "hexagon" as const, color: "#4A90D9" },
+  core: { label: "Core", shape: "hexagon" as const },
 };
 
 const baseEdgeTypes = {
-  cron: { label: "Cron", style: "solid" as const, color: "#888" },
+  cron: { label: "Cron", style: "solid" as const },
 };
 
 function makeGraph(partial: Partial<RawGraph>): RawGraph {

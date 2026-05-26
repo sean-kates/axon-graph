@@ -2,7 +2,7 @@
   "config": {
     "pollInterval": 30000,
     "propagation": {
-      "decayFactor": 0.5,
+      "decayFactor": 0.75,
       "maxDepth": 5
     },
     "satelliteOrbit": true,
@@ -11,40 +11,33 @@
   "nodeTypes": {
     "core": {
       "label": "Core",
-      "shape": "hexagon",
-      "color": "#4A90D9"
+      "shape": "hexagon"
     },
     "transform": {
       "label": "Transform",
-      "shape": "circle",
-      "color": "#7B68EE"
+      "shape": "circle"
     },
     "warehouse": {
       "label": "Warehouse",
-      "shape": "diamond",
-      "color": "#20B2AA"
+      "shape": "diamond"
     },
     "staging": {
       "label": "Staging",
-      "shape": "square",
-      "color": "#FF8C42"
+      "shape": "square"
     }
   },
   "edgeTypes": {
     "cron": {
       "label": "Cron Job",
-      "style": "animated",
-      "color": "#4A90D9"
+      "style": "animated"
     },
     "event": {
       "label": "Event Triggered",
-      "style": "animated",
-      "color": "#7B68EE"
+      "style": "animated"
     },
     "streaming": {
       "label": "Streaming",
-      "style": "animated",
-      "color": "#20B2AA"
+      "style": "animated"
     }
   },
   "nodes": [
