@@ -1,40 +1,35 @@
 import { describe, it, expect } from "vitest";
-import { scoreToColor, scoreToGlow, statusToScore } from "./healthColors";
+import { scoreToColor, scoreToGlow, statusToScore, DEFAULT_HEALTH_STOPS } from "./healthColors";
 
-// HEALTH_GREEN=#00ff88 (R=0, G=255, B=136)
-// HEALTH_RED  =#ff3333 (R=255, G=51, B=51)
-// lerp(from, to, t): round(from + (to-from)*t) per channel
-
-describe("scoreToColor — lerp between #00ff88 and #ff3333", () => {
-  it("score=0.0 → pure green #00ff88", () => {
-    expect(scoreToColor(0.0)).toBe("#00ff88");
+describe("scoreToColor — 3-stop gradient: green → amber → red", () => {
+  it("score=0.0 → healthy green", () => {
+    expect(scoreToColor(0.0)).toBe("rgb(0,255,136)");
   });
 
-  it("score=0.25 → warm yellow-green", () => {
-    // R: round(0 + 255*0.25)=64=0x40  G: round(255-204*0.25)=204=0xcc  B: round(136-85*0.25)=115=0x73
-    expect(scoreToColor(0.25)).toBe("#40cc73");
+  it("score=0.25 → bright yellow-green (regression: must not be olive/muddy)", () => {
+    // t=0.5 in segment [0,0.5]: r=128, g=230, b=68
+    expect(scoreToColor(0.25)).toBe("rgb(128,230,68)");
   });
 
   it("score=0.5 → amber midpoint", () => {
-    // R: round(255*0.5)=128=0x80  G: round(255-204*0.5)=153=0x99  B: round(136-85*0.5)=94=0x5e
-    expect(scoreToColor(0.5)).toBe("#80995e");
+    expect(scoreToColor(0.5)).toBe("rgb(255,204,0)");
   });
 
-  it("score=0.6 → orange (degraded node color)", () => {
-    // R: round(255*0.6)=153=0x99  G: round(255-204*0.6)=133=0x85  B: round(136-85*0.6)=85=0x55
-    expect(scoreToColor(0.6)).toBe("#998555");
+  it("score=0.75 → warm orange (regression: must not be olive/muddy)", () => {
+    // t=0.5 in segment [0.5,1.0]: r=255, g=128, b=26
+    expect(scoreToColor(0.75)).toBe("rgb(255,128,26)");
   });
 
-  it("score=1.0 → pure red #ff3333", () => {
-    expect(scoreToColor(1.0)).toBe("#ff3333");
+  it("score=1.0 → failing red", () => {
+    expect(scoreToColor(1.0)).toBe("rgb(255,51,51)");
   });
 
   it("clamps below 0", () => {
-    expect(scoreToColor(-0.5)).toBe("#00ff88");
+    expect(scoreToColor(-0.5)).toBe("rgb(0,255,136)");
   });
 
   it("clamps above 1", () => {
-    expect(scoreToColor(1.5)).toBe("#ff3333");
+    expect(scoreToColor(1.5)).toBe("rgb(255,51,51)");
   });
 });
 
@@ -54,5 +49,14 @@ describe("statusToScore", () => {
     expect(statusToScore("unknown")).toBe(0.3);
     expect(statusToScore("degraded")).toBe(0.6);
     expect(statusToScore("failing")).toBe(1.0);
+  });
+});
+
+describe("DEFAULT_HEALTH_STOPS", () => {
+  it("exports the 3-stop palette for user overrides", () => {
+    expect(DEFAULT_HEALTH_STOPS).toHaveLength(3);
+    expect(DEFAULT_HEALTH_STOPS[0]).toMatchObject({ score: 0.0, r: 0,   g: 255, b: 136 });
+    expect(DEFAULT_HEALTH_STOPS[1]).toMatchObject({ score: 0.5, r: 255, g: 204, b: 0   });
+    expect(DEFAULT_HEALTH_STOPS[2]).toMatchObject({ score: 1.0, r: 255, g: 51,  b: 51  });
   });
 });
