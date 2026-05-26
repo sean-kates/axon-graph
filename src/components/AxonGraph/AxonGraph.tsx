@@ -36,6 +36,7 @@ export function AxonGraph({
   // Typed as `any` to sidestep force-graph's kapsule generic complexity.
   const graphRef = useRef<any>(null);
   const frameTimeRef = useRef(0);
+  const globalTimeRef = useRef(0);
   const resolvedGraphRef = useRef<ResolvedGraph | null>(null);
   const firstDataRef = useRef(true);
   const graphNodesRef = useRef<GraphNode[]>([]);
@@ -63,6 +64,7 @@ export function AxonGraph({
       .cooldownTicks(Infinity)
       .onRenderFramePre(() => {
         frameTimeRef.current += 0.04;
+        globalTimeRef.current = performance.now();
         if (!orbitEnabledRef.current) return;
         const nodes = graphNodesRef.current;
         const orbitConfig = orbitConfigRef.current;
@@ -84,7 +86,7 @@ export function AxonGraph({
       })
       .nodeCanvasObjectMode(() => "replace")
       .linkCanvasObject((link: GraphLink, ctx: CanvasRenderingContext2D) => {
-        drawLink(link, ctx, frameTimeRef.current);
+        drawLink(link, ctx, globalTimeRef.current);
       })
       .linkCanvasObjectMode(() => "replace")
       .linkPointerAreaPaint((link: GraphLink, color: string, ctx: CanvasRenderingContext2D) => {

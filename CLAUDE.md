@@ -75,6 +75,8 @@ demo/
 
 **Satellite nodes** are health checks rendered as small dots orbiting their parent. They use `dagNodeFilter((node) => !node.isSatellite)` to stay outside the DAG layer computation — without this, the DAG places them one level below their parent making them look like standalone downstream nodes. Tether links (`isTether: true`) are drawn as thin dotted lines.
 
+**Pulse animation:** Traveling dots move source→target on each edge via `drawPulse` in `drawing.ts`. `globalTime = performance.now()` is captured in `onRenderFramePre` and passed to `drawLink` as its third argument. Each link has a `phase: Math.random()` offset assigned in `graphAdapters.ts` to stagger pulses organically. Failing edges fade out mid-transit (~60% of the way) and never arrive. Streaming edges get 3 dots offset at 0/0.33/0.66. Tether links skip pulse entirely (early return in `drawLink`). `PULSE_SPEED` is a module-level constant in `drawing.ts` — tweak for feel.
+
 ## Known friction points
 
 - **force-graph TypeScript types**: The library uses kapsule which TypeScript doesn't understand as callable. Always use `new (ForceGraph as any)()` and type the instance as `any`.

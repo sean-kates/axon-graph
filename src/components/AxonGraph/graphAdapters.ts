@@ -1,4 +1,4 @@
-import type { ResolvedGraph, ResolvedNode, ResolvedEdge, ReportedStatus } from "../../types";
+import type { ResolvedGraph, ResolvedNode, ResolvedEdge, ReportedStatus, VisualStatus } from "../../types";
 import { scoreToColor, statusToScore } from "./healthColors";
 
 const BASE_SATELLITE_SIZE = 4;
@@ -27,6 +27,9 @@ export interface GraphLink {
   color: string;
   style: string;
   label: string;
+  phase: number;
+  visualStatus?: VisualStatus;
+  edgeType?: string;
   sourceEdge?: ResolvedEdge;
   isSynthetic?: boolean;
   isTether?: boolean;
@@ -111,6 +114,9 @@ export function buildGraphData(graph: ResolvedGraph): GraphData {
         color: edgeColor,
         style: edgeType?.style ?? "solid",
         label: edge.label,
+        phase: Math.random(),
+        visualStatus: edge.visualStatus,
+        edgeType: edge.type,
         sourceEdge: edge,
       });
     } else {
@@ -133,6 +139,9 @@ export function buildGraphData(graph: ResolvedGraph): GraphData {
           color: edgeColor,
           style: edgeType?.style ?? "solid",
           label: "",
+          phase: Math.random(),
+          visualStatus: edge.visualStatus,
+          edgeType: edge.type,
           sourceEdge: edge,
           isSynthetic: true,
         });
@@ -146,6 +155,9 @@ export function buildGraphData(graph: ResolvedGraph): GraphData {
         color: edgeColor,
         style: edgeType?.style ?? "solid",
         label: edge.label,
+        phase: Math.random(),
+        visualStatus: edge.visualStatus,
+        edgeType: edge.type,
         sourceEdge: edge,
         isSynthetic: true,
       });
@@ -162,6 +174,7 @@ export function buildGraphData(graph: ResolvedGraph): GraphData {
         color: "rgba(255,255,255,0.18)",
         style: "solid",
         label: "",
+        phase: 0,
         isSynthetic: true,
         isTether: true,
       });

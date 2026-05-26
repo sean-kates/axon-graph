@@ -80,18 +80,18 @@
       "size": 1.8,
       "healthRollup": "any",
       "health": {
-        "status": "degraded",
+        "status": "unknown",
         "updatedAt": "2026-05-25T04:55:00Z",
         "checks": [
           {
             "name": "api_latency",
-            "status": "degraded",
+            "status": "unknown",
             "message": "Fraud vendor API p99 latency 8.2s — SLA is <500ms, causing partial signal loss",
             "checkedAt": "2026-05-25T04:55:00Z"
           },
           {
             "name": "signal_volume",
-            "status": "degraded",
+            "status": "unknown",
             "message": "Signal throughput at 23% of expected — vendor throttling suspected",
             "checkedAt": "2026-05-25T04:55:00Z"
           }
