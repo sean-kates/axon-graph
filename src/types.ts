@@ -1,4 +1,5 @@
 export type HealthStatus = "healthy" | "degraded" | "failing" | "unknown";
+export type VisualStatus = HealthStatus | "at_risk";
 export type HealthRollup = "any" | "all" | "majority";
 export type EdgeStyle = "solid" | "dashed" | "animated";
 export type NodeShape = "hexagon" | "circle" | "diamond" | "square";
@@ -76,12 +77,14 @@ export interface RawGraph {
 }
 
 export interface ResolvedNode extends RawNode {
-  visualStatus: HealthStatus;
+  visualStatus: VisualStatus;
   visualReason: string | null;
+  finalScore: number;
+  influenceScore: number;
 }
 
 export interface ResolvedEdge extends RawEdge {
-  visualStatus: HealthStatus;
+  visualStatus: HealthStatus; // edges don't emit at_risk; at_risk is node-only
   visualReason: string | null;
 }
 

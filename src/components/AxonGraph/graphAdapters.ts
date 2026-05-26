@@ -1,7 +1,6 @@
 import type { ResolvedGraph, ResolvedNode, ResolvedEdge, HealthStatus } from "../../types";
-import { healthColor } from "./healthColors";
+import { scoreToColor, statusToScore } from "./healthColors";
 
-const BASE_NODE_COLOR = "#4A90D9";
 const BASE_SATELLITE_SIZE = 4;
 
 export interface GraphNode {
@@ -74,14 +73,10 @@ export function buildGraphData(graph: ResolvedGraph): GraphData {
   const nodeMap = new Map(graph.nodes.map((n) => [n.id, n]));
 
   for (const node of graph.nodes) {
-    const nodeType = graph.nodeTypes[node.type];
-    const base = nodeType?.color ?? BASE_NODE_COLOR;
-    const color = healthColor(base, node.visualStatus);
-
     nodes.push({
       id: node.id,
       label: node.label,
-      color,
+      color: scoreToColor(node.finalScore),
       nodeSize: (node.size ?? 1) * 8,
       isSatellite: false,
       sourceNode: node,
@@ -92,7 +87,7 @@ export function buildGraphData(graph: ResolvedGraph): GraphData {
       nodes.push({
         id: `${node.id}__sat__${idx}`,
         label: check.name,
-        color: healthColor("#888888", check.status),
+        color: scoreToColor(statusToScore(check.status)),
         nodeSize: Math.max(BASE_SATELLITE_SIZE, (node.size ?? 1) * 3),
         isSatellite: true,
         parentId: node.id,
@@ -105,7 +100,7 @@ export function buildGraphData(graph: ResolvedGraph): GraphData {
 
   for (const edge of graph.edges) {
     const edgeType = graph.edgeTypes[edge.type];
-    const edgeColor = healthColor(edgeType?.color ?? "#888888", edge.visualStatus);
+    const edgeColor = scoreToColor(statusToScore(edge.visualStatus));
 
     if (edge.sources.length === 1) {
       // Simple edge: source → target

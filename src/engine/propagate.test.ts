@@ -125,7 +125,7 @@ describe("propagate — single upstream failing", () => {
     expect(b.visualReason).toContain("A");
   });
 
-  it("two hops downstream gets healthy (decayFactor 0.5^2 = 0.25 → no longer degrades)", () => {
+  it("two hops downstream gets at_risk (decayFactor 0.5^2 = 0.25 → faint upstream signal)", () => {
     // A (failing) → B → C
     const graph = makeGraph({
       nodes: [
@@ -180,8 +180,9 @@ describe("propagate — single upstream failing", () => {
     });
     const resolved = propagate(graph);
     const c = resolved.nodes.find((n) => n.id === "c")!;
-    // 0.5^2 = 0.25, below degraded threshold (0.4), so c stays healthy
-    expect(c.visualStatus).toBe("healthy");
+    // influenceScore=0.25, finalScore=0.25 (>= 0.1 threshold), so c gets at_risk
+    expect(c.visualStatus).toBe("at_risk");
+    expect(c.finalScore).toBeCloseTo(0.25);
   });
 });
 
@@ -399,6 +400,77 @@ describe("propagate — edge visualStatus", () => {
     const resolved = propagate(graph);
     const edge = resolved.edges.find((e) => e.id === "e1")!;
     expect(edge.visualStatus).toBe("failing");
+  });
+});
+
+describe("propagate — finalScore continuous model", () => {
+  function singleNode(status: "healthy" | "degraded" | "failing" | "unknown") {
+    return makeGraph({
+      nodes: [{ id: "a", label: "A", type: "core", size: 1, healthRollup: "any", health: { status, updatedAt: "", checks: [] }, meta: {} }],
+    });
+  }
+
+  it("healthy node, no upstream → finalScore=0.00", () => {
+    const n = propagate(singleNode("healthy")).nodes[0];
+    expect(n.finalScore).toBeCloseTo(0.0);
+    expect(n.visualStatus).toBe("healthy");
+  });
+
+  it("degraded node, no upstream → finalScore=0.60", () => {
+    const n = propagate(singleNode("degraded")).nodes[0];
+    expect(n.finalScore).toBeCloseTo(0.6);
+    expect(n.visualStatus).toBe("degraded");
+  });
+
+  it("failing node → finalScore=1.00", () => {
+    const n = propagate(singleNode("failing")).nodes[0];
+    expect(n.finalScore).toBeCloseTo(1.0);
+    expect(n.visualStatus).toBe("failing");
+  });
+
+  it("healthy node 1 hop from failing → finalScore=0.50", () => {
+    const graph = makeGraph({
+      nodes: [
+        { id: "a", label: "A", type: "core", size: 1, healthRollup: "any", health: { status: "failing", updatedAt: "", checks: [] }, meta: {} },
+        { id: "b", label: "B", type: "core", size: 1, healthRollup: "any", health: { status: "healthy", updatedAt: "", checks: [] }, meta: {} },
+      ],
+      edges: [{ id: "e1", label: "job", sources: ["a"], target: "b", type: "cron", health: { status: "healthy", checks: [] }, meta: {} }],
+    });
+    const b = propagate(graph).nodes.find((n) => n.id === "b")!;
+    expect(b.finalScore).toBeCloseTo(0.5);
+    expect(b.visualStatus).toBe("degraded");
+  });
+
+  it("healthy node 2 hops from failing → finalScore=0.25", () => {
+    const graph = makeGraph({
+      nodes: [
+        { id: "a", label: "A", type: "core", size: 1, healthRollup: "any", health: { status: "failing", updatedAt: "", checks: [] }, meta: {} },
+        { id: "b", label: "B", type: "core", size: 1, healthRollup: "any", health: { status: "healthy", updatedAt: "", checks: [] }, meta: {} },
+        { id: "c", label: "C", type: "core", size: 1, healthRollup: "any", health: { status: "healthy", updatedAt: "", checks: [] }, meta: {} },
+      ],
+      edges: [
+        { id: "e1", label: "job1", sources: ["a"], target: "b", type: "cron", health: { status: "healthy", checks: [] }, meta: {} },
+        { id: "e2", label: "job2", sources: ["b"], target: "c", type: "cron", health: { status: "healthy", checks: [] }, meta: {} },
+      ],
+    });
+    const c = propagate(graph).nodes.find((n) => n.id === "c")!;
+    expect(c.finalScore).toBeCloseTo(0.25);
+    expect(c.visualStatus).toBe("at_risk");
+  });
+
+  it("failing node own score floors a weaker upstream (max semantics)", () => {
+    // A (degraded) → B (failing): B's own score 1.0 > upstream 0.3 = finalScore stays 1.0
+    const graph = makeGraph({
+      nodes: [
+        { id: "a", label: "A", type: "core", size: 1, healthRollup: "any", health: { status: "degraded", updatedAt: "", checks: [] }, meta: {} },
+        { id: "b", label: "B", type: "core", size: 1, healthRollup: "any", health: { status: "failing", updatedAt: "", checks: [] }, meta: {} },
+      ],
+      edges: [{ id: "e1", label: "job", sources: ["a"], target: "b", type: "cron", health: { status: "healthy", checks: [] }, meta: {} }],
+    });
+    const b = propagate(graph).nodes.find((n) => n.id === "b")!;
+    expect(b.finalScore).toBeCloseTo(1.0);
+    expect(b.visualStatus).toBe("failing");
+    expect(b.visualReason).toBeNull(); // own status dominates; no upstream bump
   });
 });
 

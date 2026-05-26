@@ -8,6 +8,7 @@ import type { ResolvedGraph, ResolvedNode, ResolvedEdge } from "../types";
 
 const STATUS_BORDER: Record<string, string> = {
   healthy: "#4ade80",
+  at_risk: "#86efac",
   degraded: "#fbbf24",
   failing: "#f87171",
   unknown: "#9ca3af",

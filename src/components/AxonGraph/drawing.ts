@@ -1,6 +1,6 @@
 import type { ResolvedGraph } from "../../types";
 import type { GraphNode, GraphLink } from "./graphAdapters";
-import { healthGlow } from "./healthColors";
+import { scoreToGlow } from "./healthColors";
 
 const phaseCache = new Map<string, number>();
 
@@ -63,7 +63,7 @@ export function drawNode(
 
   const r = node.nodeSize;
   const glowColor = node.sourceNode
-    ? healthGlow(node.sourceNode.visualStatus)
+    ? scoreToGlow(node.sourceNode.finalScore)
     : "rgba(80,80,80,0.3)";
   const glowRadius = r * (1.5 + pulse * 0.5);
   const grd = ctx.createRadialGradient(x, y, r * 0.3, x, y, glowRadius);

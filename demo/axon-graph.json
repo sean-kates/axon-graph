@@ -107,13 +107,13 @@
       "size": 1.5,
       "healthRollup": "any",
       "health": {
-        "status": "degraded",
+        "status": "failing",
         "updatedAt": "2026-05-25T04:45:00Z",
         "checks": [
           {
             "name": "freshness",
-            "status": "degraded",
-            "message": "Last updated 3.5 hours ago, expected < 2h",
+            "status": "failing",
+            "message": "Last updated 5.5 hours ago, expected < 2h — feed appears stalled",
             "checkedAt": "2026-05-25T05:00:00Z"
           }
         ]

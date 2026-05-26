@@ -13,6 +13,7 @@ function isNode(x: ResolvedNode | ResolvedEdge): x is ResolvedNode {
 
 const STATUS_BADGE: Record<string, { bg: string; text: string }> = {
   healthy: { bg: "#1a4a1a", text: "#4ade80" },
+  at_risk: { bg: "#1a3a2a", text: "#86efac" },
   degraded: { bg: "#4a3a00", text: "#fbbf24" },
   failing: { bg: "#4a1a1a", text: "#f87171" },
   unknown: { bg: "#2a2a2a", text: "#9ca3af" },

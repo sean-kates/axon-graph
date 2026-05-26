@@ -4,10 +4,10 @@ import type {
   ResolvedNode,
   ResolvedEdge,
   HealthStatus,
+  VisualStatus,
 } from "../types";
 
-// Health severity order for comparison
-const SEVERITY: Record<HealthStatus, number> = {
+const STATUS_SEVERITY: Record<HealthStatus, number> = {
   healthy: 0,
   unknown: 1,
   degraded: 2,
@@ -15,37 +15,35 @@ const SEVERITY: Record<HealthStatus, number> = {
 };
 
 function worstStatus(a: HealthStatus, b: HealthStatus): HealthStatus {
-  return SEVERITY[a] >= SEVERITY[b] ? a : b;
+  return STATUS_SEVERITY[a] >= STATUS_SEVERITY[b] ? a : b;
 }
 
-// Converts a propagated influence score into a status bump.
-// score = baseScore * decayFactor^hops
-// >= 0.8 → failing, >= 0.4 → degraded, else no impact
-function scoreToStatus(score: number): HealthStatus | null {
+// at_risk is info-panel only; treat it as healthy when propagating through edges
+function visualToHealthStatus(vs: VisualStatus): HealthStatus {
+  return vs === "at_risk" ? "healthy" : vs;
+}
+
+export function baseScore(status: HealthStatus): number {
+  switch (status) {
+    case "failing":  return 1.0;
+    case "degraded": return 0.6;
+    case "unknown":  return 0.3;
+    case "healthy":  return 0;
+  }
+}
+
+function finalScoreToVisualStatus(score: number): VisualStatus {
   if (score >= 0.8) return "failing";
   if (score >= 0.4) return "degraded";
-  return null;
-}
-
-// Base propagation score for a source node's reported status
-function baseScore(status: HealthStatus): number {
-  switch (status) {
-    case "failing":
-      return 1.0;
-    case "degraded":
-      return 0.6;
-    case "unknown":
-      return 0.3;
-    case "healthy":
-      return 0;
-  }
+  if (score >= 0.1) return "at_risk";
+  return "healthy";
 }
 
 export function propagate(graph: RawGraph): ResolvedGraph {
   const { decayFactor, maxDepth } = graph.config.propagation;
 
-  // Build adjacency: nodeId → outgoing edges (edges where node is a source)
-  const outEdges = new Map<string, string[]>(); // nodeId → edgeIds
+  // Build adjacency: nodeId → outgoing edgeIds
+  const outEdges = new Map<string, string[]>();
   const edgeMap = new Map(graph.edges.map((e) => [e.id, e]));
 
   for (const node of graph.nodes) {
@@ -57,16 +55,13 @@ export function propagate(graph: RawGraph): ResolvedGraph {
     }
   }
 
-  // For each node, track the worst (influence_score, source_label) arriving from upstream
-  // influence_score: what decayed score reaches this node
+  // For each node, track the highest continuous influence score arriving from upstream
   const nodeInfluence = new Map<string, { score: number; from: string }>();
 
-  // BFS from each non-healthy node
   for (const startNode of graph.nodes) {
     const startScore = baseScore(startNode.health.status);
     if (startScore === 0) continue;
 
-    // BFS: queue entries are [edgeId, hops]
     const queue: Array<{ edgeId: string; hops: number }> = [];
     for (const eid of outEdges.get(startNode.id) ?? []) {
       queue.push({ edgeId: eid, hops: 1 });
@@ -90,51 +85,50 @@ export function propagate(graph: RawGraph): ResolvedGraph {
         nodeInfluence.set(targetId, { score, from: startNode.label });
       }
 
-      // Continue propagating from target
       for (const nextEdgeId of outEdges.get(targetId) ?? []) {
         queue.push({ edgeId: nextEdgeId, hops: hops + 1 });
       }
     }
   }
 
-  // Resolve nodes
+  // Resolve nodes with continuous finalScore
   const resolvedNodes: ResolvedNode[] = graph.nodes.map((node) => {
     const reportedStatus = node.health.status;
+    const reportedScore = baseScore(reportedStatus);
     const influence = nodeInfluence.get(node.id);
+    const influenceScore = influence?.score ?? 0;
+    const finalScore = Math.max(reportedScore, influenceScore);
 
-    if (!influence) {
-      return { ...node, visualStatus: reportedStatus, visualReason: null };
-    }
+    // Only bump visualStatus when upstream pushes beyond the node's own score
+    const visualStatus: VisualStatus =
+      influenceScore > reportedScore
+        ? finalScoreToVisualStatus(finalScore)
+        : reportedStatus;
 
-    const upstreamStatus = scoreToStatus(influence.score);
-    if (!upstreamStatus) {
-      return { ...node, visualStatus: reportedStatus, visualReason: null };
-    }
-
-    const visualStatus = worstStatus(reportedStatus, upstreamStatus);
     const visualReason =
-      visualStatus !== reportedStatus
-        ? `Upstream failure from ${influence.from}`
+      (visualStatus as string) !== reportedStatus && influence
+        ? `Upstream signal from ${influence.from}`
         : null;
 
-    return { ...node, visualStatus, visualReason };
+    return { ...node, visualStatus, visualReason, finalScore, influenceScore };
   });
 
-  // Build resolved node map for edge resolution
   const resolvedNodeMap = new Map(resolvedNodes.map((n) => [n.id, n]));
 
-  // Resolve edges: visualStatus = worst of (own health.status, worst source visualStatus)
+  // Resolve edges: visualStatus = worst of (own health, worst source visualStatus)
   const resolvedEdges: ResolvedEdge[] = graph.edges.map((edge) => {
     const ownStatus = edge.health.status;
 
-    // Worst visualStatus among all source nodes
     let worstSourceStatus: HealthStatus = "healthy";
     let worstSourceLabel: string | null = null;
     for (const srcId of edge.sources) {
       const srcNode = resolvedNodeMap.get(srcId);
-      if (srcNode && SEVERITY[srcNode.visualStatus] > SEVERITY[worstSourceStatus]) {
-        worstSourceStatus = srcNode.visualStatus;
-        worstSourceLabel = srcNode.label;
+      if (srcNode) {
+        const srcStatus = visualToHealthStatus(srcNode.visualStatus);
+        if (STATUS_SEVERITY[srcStatus] > STATUS_SEVERITY[worstSourceStatus]) {
+          worstSourceStatus = srcStatus;
+          worstSourceLabel = srcNode.label;
+        }
       }
     }
 
