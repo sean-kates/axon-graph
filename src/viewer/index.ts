@@ -139,12 +139,13 @@ function initGraph(raw: Parameters<typeof propagate>[0]): void {
       if (!l.isTether && l.sourceEdge) showPanel(l.sourceEdge);
     });
 
-  (graph as any).d3Force("charge").strength((node: GraphNode) => node.isSatellite ? 0 : -600);
+  (graph as any).d3Force("charge").strength((node: GraphNode) => node.isSatellite ? 0 : -2000);
   (graph as any).d3Force("link")
     .distance((link: GraphLink) => link.id.endsWith("__sat_link") ? 18 : 80)
     .strength((link: GraphLink) => link.id.endsWith("__sat_link") ? 0 : 1);
 
   setTimeout(() => graph!.zoomToFit(400, 60), 800);
+  setTimeout(() => graph!.zoomToFit(400, 60), 3500);
 
   window.addEventListener("resize", () => {
     graph!.width(window.innerWidth).height(window.innerHeight);

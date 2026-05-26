@@ -115,7 +115,7 @@ export function AxonGraph({
       });
 
     // Tune forces: more repulsion between nodes, short tether for satellites.
-    instance.d3Force("charge").strength((node: GraphNode) => node.isSatellite ? 0 : -600);
+    instance.d3Force("charge").strength((node: GraphNode) => node.isSatellite ? 0 : -2000);
     instance.d3Force("link")
       .distance((link: GraphLink) => link.id.endsWith("__sat_link") ? 18 : 80)
       .strength((link: GraphLink) => link.id.endsWith("__sat_link") ? 0 : 1);
@@ -139,6 +139,7 @@ export function AxonGraph({
     const delay = firstDataRef.current ? 800 : 600;
     firstDataRef.current = false;
     setTimeout(() => graphRef.current?.zoomToFit(400, 60), delay);
+    setTimeout(() => graphRef.current?.zoomToFit(400, 60), 3500);
   }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync width/height prop changes.
