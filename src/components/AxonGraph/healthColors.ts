@@ -1,7 +1,10 @@
 import type { HealthStatus } from "../../types";
 
-const HEALTH_GREEN = "#00ff88";
-const HEALTH_RED = "#ff3333";
+export const DEFAULT_HEALTH_STOPS = [
+  { score: 0.0, r: 0,   g: 255, b: 136 }, // #00ff88 healthy green
+  { score: 0.5, r: 255, g: 204, b: 0   }, // #ffcc00 amber
+  { score: 1.0, r: 255, g: 51,  b: 51  }, // #ff3333 failing red
+];
 
 export function statusToScore(status: HealthStatus): number {
   switch (status) {
@@ -13,30 +16,36 @@ export function statusToScore(status: HealthStatus): number {
 }
 
 export function scoreToColor(score: number): string {
-  return lerpHex(HEALTH_GREEN, HEALTH_RED, Math.max(0, Math.min(1, score)));
+  const [r, g, b] = lerpColorRgb(score);
+  return `rgb(${r},${g},${b})`;
 }
 
 export function scoreToGlow(score: number): string {
-  const [r, g, b] = hexToRgb(scoreToColor(score));
+  const [r, g, b] = lerpColorRgb(score);
   return `rgba(${r},${g},${b},0.7)`;
 }
 
-function hexToRgb(hex: string): [number, number, number] {
-  const n = parseInt(hex.replace("#", ""), 16);
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-}
+function lerpColorRgb(score: number): [number, number, number] {
+  const stops = DEFAULT_HEALTH_STOPS;
+  const s = Math.max(0, Math.min(1, score));
 
-function rgbToHex(r: number, g: number, b: number): string {
-  return (
-    "#" +
-    [r, g, b]
-      .map((v) => Math.round(v).toString(16).padStart(2, "0"))
-      .join("")
-  );
-}
+  let lower = stops[0];
+  let upper = stops[stops.length - 1];
 
-function lerpHex(from: string, to: string, t: number): string {
-  const [r1, g1, b1] = hexToRgb(from);
-  const [r2, g2, b2] = hexToRgb(to);
-  return rgbToHex(r1 + (r2 - r1) * t, g1 + (g2 - g1) * t, b1 + (b2 - b1) * t);
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (s >= stops[i].score && s <= stops[i + 1].score) {
+      lower = stops[i];
+      upper = stops[i + 1];
+      break;
+    }
+  }
+
+  const range = upper.score - lower.score;
+  const t = range === 0 ? 0 : (s - lower.score) / range;
+
+  return [
+    Math.round(lower.r + (upper.r - lower.r) * t),
+    Math.round(lower.g + (upper.g - lower.g) * t),
+    Math.round(lower.b + (upper.b - lower.b) * t),
+  ];
 }
