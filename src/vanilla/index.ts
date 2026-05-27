@@ -1,4 +1,5 @@
 import ForceGraph from "force-graph";
+import { forceCollide } from "d3-force-3d";
 import { propagate } from "../engine";
 import {
   buildGraphData,
@@ -215,6 +216,9 @@ export function mountAxonGraph(
   graph.d3Force("link")
     .distance((link: GraphLink) => link.id.endsWith("__sat_link") ? 18 : 80)
     .strength((link: GraphLink) => link.id.endsWith("__sat_link") ? 0 : 1);
+  graph.d3Force("collide", forceCollide((node: GraphNode) =>
+    node.isSatellite ? node.nodeSize / 2 + 2 : Math.max(node.nodeSize + 40, node.label.length * 4 + node.nodeSize)
+  ));
 
   function applyGraphData(raw: Parameters<typeof propagate>[0]): void {
     resolvedGraph = propagate(raw);
