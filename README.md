@@ -4,30 +4,65 @@ Data pipeline health visualization library with a nervous system / star chart ae
 
 Visualizes ClickHouse tables (or any data nodes) connected by data jobs, with live health status that propagates downstream through the graph using a configurable decay model.
 
+Framework-agnostic — works in any browser environment with no dependencies beyond `force-graph`.
+
 ## Install
 
 ```bash
 npm install axon-graph
 ```
 
-## React component
+## Vanilla API
 
-```tsx
-import { AxonGraph } from 'axon-graph';
+```ts
+import { mountAxonGraph } from 'axon-graph';
 
-function Dashboard() {
-  return (
-    <AxonGraph
-      configUrl="/api/axon"
-      pollInterval={30000}
-      width={1200}
-      height={700}
-    />
-  );
-}
+const instance = mountAxonGraph(document.getElementById('graph')!, {
+  configUrl: '/api/axon',
+  pollInterval: 30000,
+  width: 1200,
+  height: 700,
+});
+
+// later — stops polling and removes the canvas
+instance.destroy();
 ```
 
-Your endpoint at `configUrl` must return a `RawGraph` JSON object (see schema below). The component owns the fetch/poll loop — no external state management needed.
+Your endpoint at `configUrl` must return a `RawGraph` JSON object (see schema below). `mountAxonGraph` owns the fetch/poll loop — no external state management needed.
+
+### MountConfig
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `configUrl` | `string` | required | URL that returns a `RawGraph` |
+| `pollInterval` | `number` | `30000` | Milliseconds between refreshes |
+| `width` | `number` | element width or `900` | Canvas width in px |
+| `height` | `number` | element height or `600` | Canvas height in px |
+
+### AxonGraphInstance
+
+| Method | Description |
+|---|---|
+| `destroy()` | Stops polling and tears down the canvas |
+
+## React wrapper (10 lines)
+
+React is not included — here's how to wrap the vanilla API in a component:
+
+```tsx
+import { useEffect, useRef } from 'react';
+import { mountAxonGraph, type MountConfig } from 'axon-graph';
+
+export function AxonGraph(props: MountConfig) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    const instance = mountAxonGraph(ref.current, props);
+    return () => instance.destroy();
+  }, [props.configUrl, props.pollInterval, props.width, props.height]);
+  return <div ref={ref} />;
+}
+```
 
 ## CLI viewer
 
@@ -43,7 +78,7 @@ Opens `http://localhost:4242` in your browser.
 
 ## Propagation engine (pure logic)
 
-Use the engine directly without any React:
+Use the engine directly without any rendering:
 
 ```ts
 import { propagate } from 'axon-graph';
@@ -85,8 +120,7 @@ Fan-in edges (multiple sources → one target) are handled: the worst source inf
     // shapes: hexagon | circle | diamond | square
   },
   "edgeTypes": {
-    "cron": { "label": "Cron Job", "style": "solid" }
-    // styles: solid | dashed | animated
+    "cron": { "label": "Cron Job" }
   },
   "nodes": [
     {
@@ -134,7 +168,7 @@ Fan-in edges (multiple sources → one target) are handled: the worst source inf
 - **Force-directed, DAG-aware** layout (top-down)
 - **Node color** = health-derived: green (healthy) → amber (degraded) → red (failing), driven by a continuous score-based gradient
 - **Satellites** = small orbiting dots, one per health check, always visible
-- **Edges**: solid / dashed / animated (streaming) based on type; color driven by health
+- **Edges**: thin solid lines; color driven by health; traveling pulse dots as the motion signal
 - **Info panel**: click any node or edge to see `reportedStatus` vs `visualStatus` with reason string and full check list
 
 ## TypeScript types
@@ -146,10 +180,12 @@ import type {
   RawGraph, ResolvedGraph,
   RawNode, ResolvedNode,
   RawEdge, ResolvedEdge,
-  HealthStatus, HealthRollup,
-  HealthCheck, NodeHealth, EdgeHealth,
+  ReportedStatus, VisualStatus,
+  HealthRollup, HealthCheck,
+  NodeHealth, EdgeHealth,
   NodeType, EdgeType,
   GraphConfig, PropagationConfig,
+  MountConfig, AxonGraphInstance,
 } from 'axon-graph';
 ```
 

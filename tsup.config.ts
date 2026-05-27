@@ -7,7 +7,6 @@ export default defineConfig([
     dts: true,
     sourcemap: true,
     clean: true,
-    external: ["react", "react-dom"],
     treeshake: true,
   },
   {
@@ -16,7 +15,6 @@ export default defineConfig([
     dts: false,
     sourcemap: true,
     banner: { js: "#!/usr/bin/env node" },
-    external: ["react", "react-dom"],
   },
   {
     // Self-contained browser bundle served by the CLI viewer.

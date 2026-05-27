@@ -1,5 +1,5 @@
-export { AxonGraph } from "./components";
-export type { AxonGraphProps } from "./components";
+export { mountAxonGraph } from "./vanilla";
+export type { MountConfig, AxonGraphInstance } from "./vanilla";
 export { propagate } from "./engine";
 export type {
   RawGraph,
