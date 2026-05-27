@@ -2,9 +2,11 @@
 
 Data pipeline health visualization library with a nervous system / star chart aesthetic.
 
+![axon-graph demo](demo/demo.gif)
+
 Visualizes ClickHouse tables (or any data nodes) connected by data jobs, with live health status that propagates downstream through the graph using a configurable decay model.
 
-Framework-agnostic — works in any browser environment with no dependencies beyond `force-graph`.
+Framework-agnostic — works in any browser environment. Ships with `force-graph` and `d3-force-3d` as bundled dependencies.
 
 ## Install
 
@@ -196,4 +198,4 @@ cp node_modules/axon-graph/demo/axon-graph.json .
 npx axon-graph --config axon-graph.json
 ```
 
-The demo graph has 7 nodes across 4 types with one upstream failure (`raw_events`) that propagates degraded status to its downstream consumers.
+The demo graph has 19 nodes across 4 types (`core`, `staging`, `warehouse`, `transform`) modelling a payment/fraud pipeline. `raw_transactions` is failing and `raw_fraud_signals` is unknown — their degraded status propagates downstream through the graph.

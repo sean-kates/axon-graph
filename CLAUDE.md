@@ -8,12 +8,12 @@ Data pipeline health visualization npm package.
 1. Create a branch (`git checkout -b feat/...` or `fix/...`)
 2. Commit there
 3. `git push -u origin <branch>`
-4. Open a PR targeting `main` with `gh pr create` Visualizes nodes (tables) connected by edges (jobs) with live health status that propagates downstream through the graph using a decay model.
+4. Open a PR targeting `main` with `gh pr create`
 
 ## Commands
 
 ```bash
-npm test              # vitest (propagation engine tests only — no React/browser tests)
+npm test              # vitest (propagation engine + healthColors — no browser tests)
 npm run type-check    # tsc --noEmit
 npm run build         # tsup — produces dist/index.js, dist/cli/index.js, dist/viewer.js
 node dist/cli/index.js --config demo/axon-graph.json   # run the viewer on port 4242
@@ -23,7 +23,7 @@ node dist/cli/index.js --config demo/axon-graph.json   # run the viewer on port 
 
 | Output | Entry | Purpose |
 |--------|-------|---------|
-| `dist/index.js` | `src/index.ts` | npm package — React component + propagation engine + types |
+| `dist/index.js` | `src/index.ts` | npm package — vanilla `mountAxonGraph` API + propagation engine + types |
 | `dist/cli/index.js` | `src/cli/index.ts` | `npx axon-graph` — Node HTTP server, serves HTML shell + viewer.js |
 | `dist/viewer.js` | `src/viewer/index.ts` | Browser bundle — force-graph bundled in via `noExternal` |
 
@@ -32,23 +32,26 @@ node dist/cli/index.js --config demo/axon-graph.json   # run the viewer on port 
 ```
 src/
   types.ts                        # All TypeScript types (RawGraph, ResolvedGraph, etc.)
-  index.ts                        # Package entry — re-exports component, engine, types
+  index.ts                        # Package entry — re-exports mountAxonGraph, propagate, types
+  d3-force-3d.d.ts                # TypeScript declarations for d3-force-3d
   engine/
     propagate.ts                  # Pure propagation logic (no rendering)
-    propagate.test.ts             # 11 vitest tests — run these before touching engine
+    propagate.test.ts             # 18 vitest tests — run these before touching engine
+    index.ts                      # Re-exports propagate
   components/AxonGraph/
-    AxonGraph.tsx                 # React component — mounts force-graph imperatively
-    drawing.ts                    # drawNode / drawLink — shared by React + viewer
+    drawing.ts                    # drawNode / drawLink — shared by vanilla API + viewer
     graphAdapters.ts              # ResolvedGraph → force-graph { nodes, links }
-    healthColors.ts               # healthColor() / healthGlow() color math
-    InfoPanel.tsx                 # Click panel (React) — shows reportedStatus vs visualStatus
-    usePolling.ts                 # fetch/poll hook
+    healthColors.ts               # scoreToColor() / scoreToGlow() color math
+    healthColors.test.ts          # 12 vitest tests for color interpolation
+  vanilla/
+    index.ts                      # mountAxonGraph() — framework-agnostic browser API, info panel
   viewer/
-    index.ts                      # Browser app — same drawing code, DOM info panel
+    index.ts                      # Browser app — same drawing code, DOM info panel (for CLI)
   cli/
     index.ts                      # Node server — arg parsing, 3 routes (/, /api/axon, /viewer.js)
 demo/
-  axon-graph.json                 # 7-node fixture: raw_events failing → downstream degraded
+  axon-graph.json                 # 19-node payment/fraud pipeline: raw_transactions failing, raw_fraud_signals unknown → downstream degraded
+  demo.gif                        # Preview animation used in README
 ```
 
 ## Architecture rules
@@ -59,9 +62,9 @@ demo/
 
 **`reportedStatus` is never mutated.** `health.status` is what the backend said. `visualStatus` is what the graph shows. `visualReason` explains the difference. The info panel always shows both.
 
-**force-graph is mounted imperatively in React** via `useEffect` + `useRef<HTMLDivElement>`. The graph instance is never recreated on re-render — data/size changes go through refs. `new (ForceGraph as any)()` is the instantiation pattern (kapsule class typing workaround).
+**force-graph is mounted imperatively via DOM element ownership.** `mountAxonGraph(el, config)` takes an `HTMLElement`, creates the graph inside it, and owns the canvas lifecycle. The graph instance is never recreated when data updates — `graph.graphData(...)` is called directly. `new (ForceGraph as any)()` is the instantiation pattern (kapsule class typing workaround).
 
-**`dist/viewer.js` is a self-contained browser bundle.** `force-graph` is bundled in via `noExternal: ["force-graph"]` in tsup. The CLI serves it as a static file. The drawing code in `src/components/AxonGraph/drawing.ts` is the canonical implementation — `src/viewer/index.ts` imports from it directly.
+**`dist/viewer.js` is a self-contained browser bundle.** Both `force-graph` and `d3-force-3d` are bundled in via `noExternal: ["force-graph", "d3-force-3d"]` in tsup. The CLI serves it as a static file. The drawing code in `src/components/AxonGraph/drawing.ts` is the canonical implementation — both `src/vanilla/index.ts` and `src/viewer/index.ts` import from it directly.
 
 ## Key design decisions
 
