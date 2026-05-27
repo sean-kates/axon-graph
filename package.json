@@ -16,7 +16,8 @@
     "axon-graph": "./dist/cli/index.js"
   },
   "files": [
-    "dist"
+    "dist/**/*.js",
+    "dist/**/*.d.ts"
   ],
   "scripts": {
     "build": "tsup",
