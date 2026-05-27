@@ -1,7 +1,6 @@
 export type ReportedStatus = "healthy" | "failing" | "unknown";
 export type VisualStatus = "healthy" | "at_risk" | "degraded" | "failing";
 export type HealthRollup = "any" | "all" | "majority";
-export type EdgeStyle = "solid" | "dashed" | "animated";
 export type NodeShape = "hexagon" | "circle" | "diamond" | "square";
 
 export interface HealthCheck {
@@ -31,7 +30,6 @@ export interface NodeType {
 
 export interface EdgeType {
   label: string;
-  style: EdgeStyle;
 }
 
 export interface PropagationConfig {

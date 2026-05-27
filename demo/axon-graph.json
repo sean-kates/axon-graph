@@ -28,16 +28,13 @@
   },
   "edgeTypes": {
     "cron": {
-      "label": "Cron Job",
-      "style": "animated"
+      "label": "Cron Job"
     },
     "event": {
-      "label": "Event Triggered",
-      "style": "animated"
+      "label": "Event Triggered"
     },
     "streaming": {
-      "label": "Streaming",
-      "style": "animated"
+      "label": "Streaming"
     }
   },
   "nodes": [
