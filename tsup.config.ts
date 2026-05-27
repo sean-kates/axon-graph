@@ -25,6 +25,6 @@ export default defineConfig([
     sourcemap: true,
     platform: "browser",
     target: "es2020",
-    noExternal: ["force-graph"],
+    noExternal: ["force-graph", "d3-force-3d"],
   },
 ]);
