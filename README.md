@@ -2,7 +2,7 @@
 
 Data pipeline health visualization library with a nervous system / star chart aesthetic.
 
-![axon-graph demo](demo/demo.gif)
+![axon-graph demo](https://raw.githubusercontent.com/sean-kates/axon-graph/main/demo/demo.gif)
 
 Visualizes ClickHouse tables (or any data nodes) connected by data jobs, with live health status that propagates downstream through the graph using a configurable decay model.
 
