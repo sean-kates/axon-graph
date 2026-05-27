@@ -1,8 +1,6 @@
-import ForceGraph from "force-graph";
-import { forceCollide } from "d3-force-3d";
 import { propagate } from "../engine";
-import { buildGraphData, buildOrbitConfigs, type GraphNode, type GraphLink, type OrbitConfig } from "../components/AxonGraph/graphAdapters";
-import { drawNode, drawLink } from "../components/AxonGraph/drawing";
+import { buildGraphData, buildOrbitConfigs, type GraphNode, type OrbitConfig } from "../components/AxonGraph/graphAdapters";
+import { initForceGraph } from "../components/AxonGraph/graphSetup";
 import type { ResolvedGraph, ResolvedNode, ResolvedEdge } from "../types";
 
 // ── Info panel ────────────────────────────────────────────────────────────────
@@ -79,77 +77,16 @@ function initGraph(raw: Parameters<typeof propagate>[0]): void {
     return;
   }
 
-  graph = new (ForceGraph as any)()(document.getElementById("graph")!)
-    .width(window.innerWidth)
-    .height(window.innerHeight)
-    .backgroundColor("#070a10")
-    .graphData({ nodes, links })
-    .dagMode("td")
-    .dagLevelDistance(120)
-    .dagNodeFilter((node: object) => !(node as GraphNode).isSatellite)
-    .cooldownTicks(Infinity)
-    .cooldownTime(Infinity)
-    .onRenderFramePre(() => {
-      frameTime += 0.04;
-      globalTime = performance.now();
-      if (resolvedGraph?.config.satelliteOrbit === false) return;
-      if (currentNodes.length === 0) return;
-      const speed = resolvedGraph?.config.satelliteOrbitSpeed ?? 0.5;
-      const nodeById = new Map(currentNodes.map((n) => [n.id, n]));
-      for (const node of currentNodes) {
-        if (!node.isSatellite || !node.parentId) continue;
-        const parent = nodeById.get(node.parentId);
-        if (!parent || parent.x == null || parent.y == null) continue;
-        const cfg = orbitConfig.get(node.id);
-        if (!cfg) continue;
-        const angle = frameTime * speed + cfg.phase;
-        node.fx = parent.x + cfg.radius * Math.cos(angle);
-        node.fy = parent.y + cfg.radius * Math.sin(angle);
-      }
-    })
-    .nodeCanvasObject((node: object, ctx: CanvasRenderingContext2D, globalScale: number) => {
-      drawNode(node as GraphNode, ctx, frameTime, resolvedGraph, globalScale);
-    })
-    .nodeCanvasObjectMode(() => "replace")
-    .linkCanvasObject((link: object, ctx: CanvasRenderingContext2D) => {
-      drawLink(link as GraphLink, ctx, globalTime);
-    })
-    .linkCanvasObjectMode(() => "replace")
-    .linkPointerAreaPaint((link: object, color: string, ctx: CanvasRenderingContext2D) => {
-      const l = link as GraphLink;
-      if (l.isTether) return;
-      const src = l.source as unknown as GraphNode;
-      const tgt = l.target as unknown as GraphNode;
-      if (typeof src !== "object" || typeof tgt !== "object") return;
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 12;
-      ctx.beginPath();
-      ctx.moveTo(src.x ?? 0, src.y ?? 0);
-      ctx.lineTo(tgt.x ?? 0, tgt.y ?? 0);
-      ctx.stroke();
-    })
-    .onNodeClick((node: object) => {
-      const n = node as GraphNode;
-      if (n.isSatellite) {
-        const parent = resolvedGraph?.nodes.find((x) => x.id === n.parentId);
-        if (parent) showPanel(parent);
-      } else {
-        const found = resolvedGraph?.nodes.find((x) => x.id === n.id);
-        if (found) showPanel(found);
-      }
-    })
-    .onLinkClick((link: object) => {
-      const l = link as GraphLink;
-      if (!l.isTether && l.sourceEdge) showPanel(l.sourceEdge);
-    });
-
-  (graph as any).d3Force("charge").strength((node: GraphNode) => node.isSatellite ? 0 : -2000);
-  (graph as any).d3Force("link")
-    .distance((link: GraphLink) => link.id.endsWith("__sat_link") ? 18 : 80)
-    .strength((link: GraphLink) => link.id.endsWith("__sat_link") ? 0 : 1);
-  (graph as any).d3Force("collide", forceCollide((node: GraphNode) =>
-    node.isSatellite ? node.nodeSize / 2 + 2 : Math.max(node.nodeSize + 40, node.label.length * 4 + node.nodeSize)
-  ));
+  graph = initForceGraph(document.getElementById("graph")!, window.innerWidth, window.innerHeight, {
+    tick: () => { frameTime += 0.04; globalTime = performance.now(); },
+    getFrameTime: () => frameTime,
+    getGlobalTime: () => globalTime,
+    getResolvedGraph: () => resolvedGraph,
+    getCurrentNodes: () => currentNodes,
+    getOrbitConfig: () => orbitConfig,
+    showPanel,
+  });
+  graph.graphData({ nodes, links });
 
   setTimeout(() => graph!.zoomToFit(400, 60), 800);
   setTimeout(() => graph!.zoomToFit(400, 60), 3500);
