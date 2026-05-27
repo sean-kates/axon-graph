@@ -158,6 +158,7 @@ export function mountAxonGraph(
     .dagLevelDistance(120)
     .dagNodeFilter((node: object) => !(node as GraphNode).isSatellite)
     .cooldownTicks(Infinity)
+    .cooldownTime(Infinity)
     .onRenderFramePre(() => {
       frameTime += 0.04;
       globalTime = performance.now();

@@ -88,6 +88,7 @@ function initGraph(raw: Parameters<typeof propagate>[0]): void {
     .dagLevelDistance(120)
     .dagNodeFilter((node: object) => !(node as GraphNode).isSatellite)
     .cooldownTicks(Infinity)
+    .cooldownTime(Infinity)
     .onRenderFramePre(() => {
       frameTime += 0.04;
       globalTime = performance.now();
