@@ -180,13 +180,8 @@ export function drawLink(
   }
 
   ctx.strokeStyle = link.color;
-  ctx.lineWidth = 1.5;
-
-  if (link.style === "dashed" || link.style === "animated") {
-    ctx.setLineDash([6, 4]);
-  } else {
-    ctx.setLineDash([]);
-  }
+  ctx.lineWidth = 0.75;
+  ctx.setLineDash([]);
 
   ctx.beginPath();
   ctx.moveTo(sx, sy);

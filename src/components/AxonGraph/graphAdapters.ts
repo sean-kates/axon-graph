@@ -25,7 +25,6 @@ export interface GraphLink {
   source: string;
   target: string;
   color: string;
-  style: string;
   label: string;
   phase: number;
   visualStatus?: VisualStatus;
@@ -112,7 +111,6 @@ export function buildGraphData(graph: ResolvedGraph): GraphData {
         source: edge.sources[0],
         target: edge.target,
         color: edgeColor,
-        style: edgeType?.style ?? "solid",
         label: edge.label,
         phase: Math.random(),
         visualStatus: edge.visualStatus,
@@ -137,7 +135,6 @@ export function buildGraphData(graph: ResolvedGraph): GraphData {
           source: srcId,
           target: hubId,
           color: edgeColor,
-          style: edgeType?.style ?? "solid",
           label: "",
           phase: Math.random(),
           visualStatus: edge.visualStatus,
@@ -153,7 +150,6 @@ export function buildGraphData(graph: ResolvedGraph): GraphData {
         source: hubId,
         target: edge.target,
         color: edgeColor,
-        style: edgeType?.style ?? "solid",
         label: edge.label,
         phase: Math.random(),
         visualStatus: edge.visualStatus,
@@ -172,7 +168,6 @@ export function buildGraphData(graph: ResolvedGraph): GraphData {
         source: node.parentId,
         target: node.id,
         color: "rgba(255,255,255,0.18)",
-        style: "solid",
         label: "",
         phase: 0,
         isSynthetic: true,

@@ -12,7 +12,7 @@ const baseNodeTypes = {
 };
 
 const baseEdgeTypes = {
-  cron: { label: "Cron", style: "solid" as const },
+  cron: { label: "Cron" },
 };
 
 function makeGraph(partial: Partial<RawGraph>): RawGraph {
