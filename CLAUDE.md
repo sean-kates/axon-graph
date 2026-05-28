@@ -36,7 +36,7 @@ src/
   d3-force-3d.d.ts                # TypeScript declarations for d3-force-3d
   engine/
     propagate.ts                  # Pure propagation logic (no rendering)
-    propagate.test.ts             # 18 vitest tests — run these before touching engine
+    propagate.test.ts             # 28 vitest tests — run these before touching engine
     index.ts                      # Re-exports propagate
   components/AxonGraph/
     drawing.ts                    # drawNode / drawLink — shared by vanilla API + viewer
@@ -60,7 +60,7 @@ demo/
 
 **`ReportedStatus` and `VisualStatus` are distinct types.** `ReportedStatus` (`healthy | failing | unknown`) is what the backend writes to the database and sends over the wire. `VisualStatus` (`healthy | at_risk | degraded | failing`) is what the propagation engine derives for rendering. `degraded` is never written to the database or sent by the backend — it is always derived by the propagation engine from upstream failing nodes. This is a hard invariant.
 
-**`reportedStatus` is never mutated.** `health.status` is what the backend said. `visualStatus` is what the graph shows. `visualReason` explains the difference. The info panel always shows both.
+**`reportedStatus` is derived from checks, never from a stored field.** `NodeHealth` and `EdgeHealth` have no `status` field. The propagation engine calls `deriveReportedStatus(checks)` — no checks → `unknown`, any failing check → `failing`, any unknown check (no failing) → `unknown`, all healthy → `healthy`. The derived value is stored as `ResolvedNode.reportedStatus` and `ResolvedEdge.reportedStatus`. It is never mutated after derivation. `visualStatus` is what the graph shows. `visualReason` explains the difference. The info panel always shows both.
 
 **force-graph is mounted imperatively via DOM element ownership.** `mountAxonGraph(el, config)` takes an `HTMLElement`, creates the graph inside it, and owns the canvas lifecycle. The graph instance is never recreated when data updates — `graph.graphData(...)` is called directly. `new (ForceGraph as any)()` is the instantiation pattern (kapsule class typing workaround).
 
@@ -69,10 +69,15 @@ demo/
 ## Key design decisions
 
 **Propagation model:**
-- Reported scores: `failing=1.0`, `unknown=0.3`, `healthy=0`
+- Reported scores: `failing=1.0`, `unknown=0.0`, `healthy=0.0`
+- `unknown` means "no signal — unmeasured, not unhealthy." It carries zero propagation weight and never degrades downstream neighbors.
 - Score at hop N: `reportedScore * decayFactor^N`
 - Score ≥ 0.8 → `failing`, ≥ 0.4 → `degraded`, ≥ 0.1 → `at_risk`, else `healthy`
 - `visualStatus = worst(reportedStatus, derivedUpstreamStatus)`
+
+**Status is derived from checks, not stored.** `NodeHealth` and `EdgeHealth` have no `status` field. The backend only writes `checks[]`. `deriveReportedStatus(checks)` in the engine computes status at runtime using "any-failing" semantics: if any check is failing the node is failing; if any check is unknown (with no failing) the node is unknown; if all checks are healthy the node is healthy; no checks → unknown. This removes an entire class of bugs where the stored status could disagree with the checks that produced it.
+
+**Unknown renders gray and carries zero propagation weight.** `unknown` means "no signal" — the node is unmeasured, not unhealthy. Rendering: gray (`rgb(100,100,110)`), outside the green→red gradient. A node renders gray only when `reportedStatus === "unknown" AND influenceScore === 0`. If upstream influence has pushed the node's `visualStatus` above `healthy`, the gradient color takes over (color and panel stay consistent). An unknown node's score is 0, so it never degrades downstream neighbors — do not change `REPORTED_SCORES.unknown` without considering this invariant.
 
 **Fan-in edges** (multiple sources → one target): rendered as a synthetic hub node in the graph data. The hub has `isSatellite: false` and no `sourceNode`. Don't promote multi-target jobs to nodes — that's a schema concern.
 

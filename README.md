@@ -90,17 +90,26 @@ const raw: RawGraph = await fetchGraph();
 const resolved: ResolvedGraph = propagate(raw);
 
 // Each node now has:
-// resolved.nodes[i].health.status  — what the backend reported
-// resolved.nodes[i].visualStatus   — what the graph should show (with upstream decay)
-// resolved.nodes[i].visualReason   — e.g. "Upstream failure from raw_events"
+// resolved.nodes[i].reportedStatus  — derived from checks ("healthy" | "failing" | "unknown")
+// resolved.nodes[i].visualStatus    — what the graph should show (with upstream decay)
+// resolved.nodes[i].visualReason    — e.g. "Upstream signal from raw_events"
 ```
 
 ## How propagation works
 
-1. Walk the graph from each non-healthy node following outgoing edges
+Each node's `reportedStatus` is derived from its `checks` array — no explicit status field needed:
+- No checks → `unknown`
+- Any failing check → `failing`
+- Any unknown check (with no failing) → `unknown`
+- All healthy → `healthy`
+
+Scores: `failing=1.0`, `unknown=0.0`, `healthy=0.0`. `unknown` means "no signal — unmeasured, not unhealthy." It carries zero propagation weight and never degrades downstream neighbors.
+
+Downstream propagation:
+1. Walk the graph from each `failing` node following outgoing edges (`unknown` and `healthy` nodes don't propagate)
 2. At each hop, multiply the source's severity score by `decayFactor`
 3. At each target node, take the worst arriving influence score
-4. Convert score → status: `≥ 0.8 → failing`, `≥ 0.4 → degraded`, else no change
+4. Convert score → status: `≥ 0.8 → failing`, `≥ 0.4 → degraded`, `≥ 0.1 → at_risk`, else no change
 5. `visualStatus` = worst of `reportedStatus` and the derived upstream status
 6. Stop at `maxDepth` hops
 
@@ -130,9 +139,7 @@ Fan-in edges (multiple sources → one target) are handled: the worst source inf
       "label": "events",
       "type": "core",
       "size": 2.0,
-      "healthRollup": "any",
       "health": {
-        "status": "healthy",
         "updatedAt": "2026-05-25T10:00:00Z",
         "checks": [
           {
@@ -154,10 +161,16 @@ Fan-in edges (multiple sources → one target) are handled: the worst source inf
       "target": "events",
       "type": "cron",
       "health": {
-        "status": "healthy",
         "lastRun": "2026-05-25T09:00:00Z",
         "nextExpected": "2026-05-25T10:00:00Z",
-        "checks": []
+        "checks": [
+          {
+            "name": "last_run_status",
+            "status": "healthy",
+            "message": "Job completed in 1m 12s",
+            "checkedAt": "2026-05-25T09:00:00Z"
+          }
+        ]
       },
       "meta": {}
     }
@@ -168,7 +181,7 @@ Fan-in edges (multiple sources → one target) are handled: the worst source inf
 ## Visual design
 
 - **Force-directed, DAG-aware** layout (top-down)
-- **Node color** = health-derived: green (healthy) → amber (degraded) → red (failing), driven by a continuous score-based gradient
+- **Node color** = health-derived: green (healthy) → amber (degraded) → red (failing), driven by a continuous score-based gradient. **Unknown nodes render gray** — they are unmeasured, not unhealthy, and sit outside the gradient
 - **Satellites** = small orbiting dots, one per health check, always visible
 - **Edges**: thin solid lines; color driven by health; traveling pulse dots as the motion signal
 - **Info panel**: click any node or edge to see `reportedStatus` vs `visualStatus` with reason string and full check list
@@ -183,7 +196,7 @@ import type {
   RawNode, ResolvedNode,
   RawEdge, ResolvedEdge,
   ReportedStatus, VisualStatus,
-  HealthRollup, HealthCheck,
+  HealthCheck,
   NodeHealth, EdgeHealth,
   NodeType, EdgeType,
   GraphConfig, PropagationConfig,
@@ -205,4 +218,4 @@ git clone https://github.com/sean-kates/axon-graph.git
 npx axon-graph --config axon-graph/demo/axon-graph.json
 ```
 
-The demo graph has 19 nodes across 4 types (`core`, `staging`, `warehouse`, `transform`) modelling a payment/fraud pipeline. `raw_transactions` is failing and `raw_fraud_signals` is unknown — their degraded status propagates downstream through the graph.
+The demo graph has 19 nodes across 4 types (`core`, `staging`, `warehouse`, `transform`) modelling a payment/fraud pipeline. `raw_transactions` is failing (two failing checks) and `raw_fraud_signals` is unknown (two unknown checks — vendor API is slow, no clean signal). The failing status propagates downstream from `raw_transactions` and renders amber/red on affected nodes; `raw_fraud_signals` renders gray and does not degrade its neighbors.
