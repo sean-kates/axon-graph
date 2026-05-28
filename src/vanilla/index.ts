@@ -70,7 +70,7 @@ function buildPanelHTML(selected: ResolvedNode | ResolvedEdge): string {
   if (!isNode) {
     const edge = selected as ResolvedEdge;
     html += `<div><div style="font-size:11px;color:#64748b;margin-bottom:6px">SOURCES → TARGET</div>`;
-    html += `<div style="font-size:12px;color:#94a3b8">${edge.sources.join(", ")} → ${edge.target}</div></div>`;
+    html += `<div style="font-size:12px;color:#94a3b8">${esc(edge.sources.join(", "))} → ${esc(edge.target)}</div></div>`;
   } else {
     html += `<div><div style="font-size:11px;color:#64748b;margin-bottom:6px">TYPE</div>`;
     html += `<div style="font-size:12px;color:#94a3b8">${esc(selected.type)}</div></div>`;

@@ -1,1 +1,1 @@
-export { propagate } from "./propagate";
+export { propagate, deriveReportedStatus } from "./propagate";
