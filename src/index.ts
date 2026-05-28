@@ -10,7 +10,6 @@ export type {
   RawEdge,
   ReportedStatus,
   VisualStatus,
-  HealthRollup,
   HealthCheck,
   NodeHealth,
   EdgeHealth,

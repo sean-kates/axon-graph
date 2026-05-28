@@ -5,11 +5,12 @@ import type {
   ResolvedEdge,
   ReportedStatus,
   VisualStatus,
+  HealthCheck,
 } from "../types";
 
 const REPORTED_SCORES: Record<ReportedStatus, number> = {
   failing: 1.0,
-  unknown: 0.3,
+  unknown: 0.0,
   healthy: 0.0,
 };
 
@@ -29,9 +30,9 @@ function visualToEdgeStatus(vs: VisualStatus): VisualStatus {
   return vs === "at_risk" ? "healthy" : vs;
 }
 
-// unknown edge health is visualized as at_risk
+// unknown means "no signal" — not unhealthy, carries zero propagation weight
 function reportedToVisual(s: ReportedStatus): VisualStatus {
-  return s === "unknown" ? "at_risk" : s;
+  return s === "unknown" ? "healthy" : s;
 }
 
 function finalScoreToVisualStatus(score: number): VisualStatus {
@@ -41,8 +42,20 @@ function finalScoreToVisualStatus(score: number): VisualStatus {
   return "healthy";
 }
 
+export function deriveReportedStatus(checks: HealthCheck[]): ReportedStatus {
+  if (checks.length === 0) return "unknown";
+  if (checks.some((c) => c.status === "failing")) return "failing";
+  if (checks.some((c) => c.status === "unknown")) return "unknown";
+  return "healthy";
+}
+
 export function propagate(graph: RawGraph): ResolvedGraph {
   const { decayFactor, maxDepth } = graph.config.propagation;
+
+  // Pre-compute derived reported status for all nodes
+  const nodeReportedStatus = new Map(
+    graph.nodes.map((n) => [n.id, deriveReportedStatus(n.health.checks)])
+  );
 
   // Build adjacency: nodeId → outgoing edgeIds
   const outEdges = new Map<string, string[]>();
@@ -61,7 +74,7 @@ export function propagate(graph: RawGraph): ResolvedGraph {
   const nodeInfluence = new Map<string, { score: number; from: string }>();
 
   for (const startNode of graph.nodes) {
-    const startScore = REPORTED_SCORES[startNode.health.status];
+    const startScore = REPORTED_SCORES[nodeReportedStatus.get(startNode.id)!];
     if (startScore === 0) continue;
 
     const queue: Array<{ edgeId: string; hops: number }> = [];
@@ -95,7 +108,7 @@ export function propagate(graph: RawGraph): ResolvedGraph {
 
   // Resolve nodes with continuous finalScore
   const resolvedNodes: ResolvedNode[] = graph.nodes.map((node) => {
-    const reportedStatus = node.health.status;
+    const reportedStatus = nodeReportedStatus.get(node.id)!;
     const reportedScore = REPORTED_SCORES[reportedStatus] ?? 0;
     const influence = nodeInfluence.get(node.id);
     const influenceScore = influence?.score ?? 0;
@@ -112,15 +125,15 @@ export function propagate(graph: RawGraph): ResolvedGraph {
         ? `Upstream signal from ${influence.from}`
         : null;
 
-    return { ...node, visualStatus, visualReason, finalScore, influenceScore };
+    return { ...node, reportedStatus, visualStatus, visualReason, finalScore, influenceScore };
   });
 
   const resolvedNodeMap = new Map(resolvedNodes.map((n) => [n.id, n]));
 
   // Resolve edges: visualStatus = worst of (own health, worst source visualStatus)
   const resolvedEdges: ResolvedEdge[] = graph.edges.map((edge) => {
-    const ownStatus = edge.health.status;
-    const ownVisual = reportedToVisual(ownStatus);
+    const reportedStatus = deriveReportedStatus(edge.health.checks);
+    const ownVisual = reportedToVisual(reportedStatus);
 
     let worstSourceStatus: VisualStatus = "healthy";
     let worstSourceLabel: string | null = null;
@@ -141,7 +154,7 @@ export function propagate(graph: RawGraph): ResolvedGraph {
         ? `Source node ${worstSourceLabel} is ${worstSourceStatus}`
         : null;
 
-    return { ...edge, visualStatus, visualReason };
+    return { ...edge, reportedStatus, visualStatus, visualReason };
   });
 
   return {

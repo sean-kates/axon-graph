@@ -24,12 +24,12 @@ function showPanel(selected: ResolvedNode | ResolvedEdge): void {
   const panelTitle = document.getElementById("panel-title")!;
   const panelBody = document.getElementById("panel-body")!;
 
-  const isNode = "healthRollup" in selected;
+  const isNode = !("sources" in selected);
   panelType.textContent = isNode ? "Table Node" : "Job Edge";
   panelTitle.textContent = selected.label;
 
   let html = "";
-  html += `<div class="section"><div class="section-label">REPORTED STATUS</div>${badge(selected.health.status)}</div>`;
+  html += `<div class="section"><div class="section-label">REPORTED STATUS</div>${badge(selected.reportedStatus)}</div>`;
   html += `<div class="section"><div class="section-label">VISUAL STATUS</div>${badge(selected.visualStatus)}`;
   if (selected.visualReason) {
     html += `<div class="reason">${esc(selected.visualReason)}</div>`;

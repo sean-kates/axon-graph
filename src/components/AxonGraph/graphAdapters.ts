@@ -1,5 +1,5 @@
 import type { ResolvedGraph, ResolvedNode, ResolvedEdge, ReportedStatus, VisualStatus } from "../../types";
-import { scoreToColor, statusToScore } from "./healthColors";
+import { scoreToColor, statusToScore, UNKNOWN_COLOR } from "./healthColors";
 
 const BASE_SATELLITE_SIZE = 4;
 
@@ -68,6 +68,18 @@ export function buildOrbitConfigs(nodes: GraphNode[]): Map<string, OrbitConfig> 
   return configs;
 }
 
+function nodeColor(node: ResolvedNode): string {
+  // Gray only when unmeasured AND no upstream has influenced this node
+  if (node.reportedStatus === "unknown" && node.influenceScore === 0) return UNKNOWN_COLOR;
+  return scoreToColor(node.finalScore);
+}
+
+function edgeColor(edge: ResolvedEdge): string {
+  // Gray only when the edge itself is unmeasured and no upstream node has influenced it
+  if (edge.reportedStatus === "unknown" && edge.visualStatus === "healthy") return UNKNOWN_COLOR;
+  return scoreToColor(statusToScore(edge.visualStatus));
+}
+
 export function buildGraphData(graph: ResolvedGraph): GraphData {
   const nodes: GraphNode[] = [];
   const links: GraphLink[] = [];
@@ -78,7 +90,7 @@ export function buildGraphData(graph: ResolvedGraph): GraphData {
     nodes.push({
       id: node.id,
       label: node.label,
-      color: scoreToColor(node.finalScore),
+      color: nodeColor(node),
       nodeSize: (node.size ?? 1) * 8,
       isSatellite: false,
       sourceNode: node,
@@ -89,7 +101,7 @@ export function buildGraphData(graph: ResolvedGraph): GraphData {
       nodes.push({
         id: `${node.id}__sat__${idx}`,
         label: check.name,
-        color: scoreToColor(statusToScore(check.status)),
+        color: check.status === "unknown" ? UNKNOWN_COLOR : scoreToColor(statusToScore(check.status)),
         nodeSize: Math.max(BASE_SATELLITE_SIZE, (node.size ?? 1) * 3),
         isSatellite: true,
         parentId: node.id,
@@ -101,8 +113,7 @@ export function buildGraphData(graph: ResolvedGraph): GraphData {
   }
 
   for (const edge of graph.edges) {
-    const edgeType = graph.edgeTypes[edge.type];
-    const edgeColor = scoreToColor(statusToScore(edge.visualStatus));
+    const color = edgeColor(edge);
 
     if (edge.sources.length === 1) {
       // Simple edge: source → target
@@ -110,7 +121,7 @@ export function buildGraphData(graph: ResolvedGraph): GraphData {
         id: edge.id,
         source: edge.sources[0],
         target: edge.target,
-        color: edgeColor,
+        color,
         label: edge.label,
         phase: Math.random(),
         visualStatus: edge.visualStatus,
@@ -123,7 +134,7 @@ export function buildGraphData(graph: ResolvedGraph): GraphData {
       nodes.push({
         id: hubId,
         label: edge.label,
-        color: edgeColor,
+        color,
         nodeSize: 5,
         isSatellite: false,
       });
@@ -134,7 +145,7 @@ export function buildGraphData(graph: ResolvedGraph): GraphData {
           id: `${edge.id}__in__${srcId}`,
           source: srcId,
           target: hubId,
-          color: edgeColor,
+          color,
           label: "",
           phase: Math.random(),
           visualStatus: edge.visualStatus,
@@ -149,7 +160,7 @@ export function buildGraphData(graph: ResolvedGraph): GraphData {
         id: `${edge.id}__out`,
         source: hubId,
         target: edge.target,
-        color: edgeColor,
+        color,
         label: edge.label,
         phase: Math.random(),
         visualStatus: edge.visualStatus,

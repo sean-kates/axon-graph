@@ -43,9 +43,7 @@
       "label": "raw_transactions",
       "type": "core",
       "size": 2.2,
-      "healthRollup": "any",
       "health": {
-        "status": "failing",
         "updatedAt": "2026-05-25T05:00:00Z",
         "checks": [
           {
@@ -75,9 +73,7 @@
       "label": "raw_fraud_signals",
       "type": "core",
       "size": 1.8,
-      "healthRollup": "any",
       "health": {
-        "status": "unknown",
         "updatedAt": "2026-05-25T04:55:00Z",
         "checks": [
           {
@@ -101,9 +97,7 @@
       "label": "raw_ledger_entries",
       "type": "core",
       "size": 1.8,
-      "healthRollup": "all",
       "health": {
-        "status": "healthy",
         "updatedAt": "2026-05-25T05:02:00Z",
         "checks": [
           {
@@ -127,9 +121,7 @@
       "label": "raw_authorizations",
       "type": "core",
       "size": 1.6,
-      "healthRollup": "all",
       "health": {
-        "status": "healthy",
         "updatedAt": "2026-05-25T05:01:00Z",
         "checks": [
           {
@@ -153,9 +145,7 @@
       "label": "dim_accounts",
       "type": "core",
       "size": 1.7,
-      "healthRollup": "all",
       "health": {
-        "status": "healthy",
         "updatedAt": "2026-05-25T04:58:00Z",
         "checks": [
           {
@@ -179,9 +169,7 @@
       "label": "dim_merchants",
       "type": "core",
       "size": 1.5,
-      "healthRollup": "all",
       "health": {
-        "status": "healthy",
         "updatedAt": "2026-05-25T04:50:00Z",
         "checks": [
           {
@@ -205,9 +193,7 @@
       "label": "stg_transactions",
       "type": "staging",
       "size": 1.6,
-      "healthRollup": "any",
       "health": {
-        "status": "healthy",
         "updatedAt": "2026-05-25T05:05:00Z",
         "checks": [
           {
@@ -231,9 +217,7 @@
       "label": "stg_fraud_signals",
       "type": "staging",
       "size": 1.4,
-      "healthRollup": "any",
       "health": {
-        "status": "healthy",
         "updatedAt": "2026-05-25T05:00:00Z",
         "checks": [
           {
@@ -257,9 +241,7 @@
       "label": "stg_ledger",
       "type": "staging",
       "size": 1.4,
-      "healthRollup": "all",
       "health": {
-        "status": "healthy",
         "updatedAt": "2026-05-25T05:03:00Z",
         "checks": [
           {
@@ -283,9 +265,7 @@
       "label": "stg_authorizations",
       "type": "staging",
       "size": 1.3,
-      "healthRollup": "all",
       "health": {
-        "status": "healthy",
         "updatedAt": "2026-05-25T05:02:00Z",
         "checks": [
           {
@@ -309,9 +289,7 @@
       "label": "fct_payments",
       "type": "warehouse",
       "size": 2.5,
-      "healthRollup": "any",
       "health": {
-        "status": "healthy",
         "updatedAt": "2026-05-25T05:10:00Z",
         "checks": [
           {
@@ -341,9 +319,7 @@
       "label": "fct_fraud_decisions",
       "type": "warehouse",
       "size": 1.8,
-      "healthRollup": "any",
       "health": {
-        "status": "healthy",
         "updatedAt": "2026-05-25T05:08:00Z",
         "checks": [
           {
@@ -366,10 +342,8 @@
       "id": "fct_reconciliation",
       "label": "fct_reconciliation",
       "type": "warehouse",
-      "size": 2.0,
-      "healthRollup": "any",
+      "size": 2,
       "health": {
-        "status": "healthy",
         "updatedAt": "2026-05-25T05:12:00Z",
         "checks": [
           {
@@ -393,9 +367,7 @@
       "label": "fct_disputes",
       "type": "warehouse",
       "size": 1.6,
-      "healthRollup": "any",
       "health": {
-        "status": "healthy",
         "updatedAt": "2026-05-25T05:11:00Z",
         "checks": [
           {
@@ -419,9 +391,7 @@
       "label": "fct_settlements",
       "type": "warehouse",
       "size": 2.2,
-      "healthRollup": "any",
       "health": {
-        "status": "healthy",
         "updatedAt": "2026-05-25T05:15:00Z",
         "checks": [
           {
@@ -445,9 +415,7 @@
       "label": "ml_fraud_model",
       "type": "transform",
       "size": 1.6,
-      "healthRollup": "any",
       "health": {
-        "status": "healthy",
         "updatedAt": "2026-05-25T04:55:00Z",
         "checks": [
           {
@@ -477,9 +445,7 @@
       "label": "mart_risk_scores",
       "type": "transform",
       "size": 1.5,
-      "healthRollup": "any",
       "health": {
-        "status": "healthy",
         "updatedAt": "2026-05-25T05:07:00Z",
         "checks": [
           {
@@ -503,9 +469,7 @@
       "label": "mart_regulatory_reports",
       "type": "warehouse",
       "size": 1.8,
-      "healthRollup": "any",
       "health": {
-        "status": "healthy",
         "updatedAt": "2026-05-25T05:20:00Z",
         "checks": [
           {
@@ -535,9 +499,7 @@
       "label": "mart_revenue_dashboard",
       "type": "warehouse",
       "size": 1.5,
-      "healthRollup": "any",
       "health": {
-        "status": "healthy",
         "updatedAt": "2026-05-25T05:18:00Z",
         "checks": [
           {
@@ -561,11 +523,12 @@
     {
       "id": "job_load_transactions",
       "label": "load_transactions",
-      "sources": ["raw_transactions"],
+      "sources": [
+        "raw_transactions"
+      ],
       "target": "stg_transactions",
       "type": "event",
       "health": {
-        "status": "healthy",
         "lastRun": "2026-05-25T05:05:00Z",
         "nextExpected": "2026-05-25T05:10:00Z",
         "checks": [
@@ -582,11 +545,12 @@
     {
       "id": "stream_fraud_signals",
       "label": "ingest_fraud_signals",
-      "sources": ["raw_fraud_signals"],
+      "sources": [
+        "raw_fraud_signals"
+      ],
       "target": "stg_fraud_signals",
       "type": "streaming",
       "health": {
-        "status": "healthy",
         "lastRun": "2026-05-25T05:00:00Z",
         "nextExpected": "2026-05-25T05:05:00Z",
         "checks": [
@@ -603,11 +567,12 @@
     {
       "id": "job_load_ledger",
       "label": "load_ledger",
-      "sources": ["raw_ledger_entries"],
+      "sources": [
+        "raw_ledger_entries"
+      ],
       "target": "stg_ledger",
       "type": "cron",
       "health": {
-        "status": "healthy",
         "lastRun": "2026-05-25T05:03:00Z",
         "nextExpected": "2026-05-25T06:03:00Z",
         "checks": [
@@ -624,11 +589,12 @@
     {
       "id": "job_load_authorizations",
       "label": "load_authorizations",
-      "sources": ["raw_authorizations"],
+      "sources": [
+        "raw_authorizations"
+      ],
       "target": "stg_authorizations",
       "type": "event",
       "health": {
-        "status": "healthy",
         "lastRun": "2026-05-25T05:02:00Z",
         "nextExpected": "2026-05-25T05:07:00Z",
         "checks": [
@@ -645,11 +611,13 @@
     {
       "id": "job_build_fct_payments",
       "label": "build_fct_payments",
-      "sources": ["stg_transactions", "dim_accounts"],
+      "sources": [
+        "stg_transactions",
+        "dim_accounts"
+      ],
       "target": "fct_payments",
       "type": "event",
       "health": {
-        "status": "healthy",
         "lastRun": "2026-05-25T05:10:00Z",
         "nextExpected": "2026-05-25T05:15:00Z",
         "checks": [
@@ -666,11 +634,13 @@
     {
       "id": "stream_fraud_decisions",
       "label": "score_fraud",
-      "sources": ["stg_fraud_signals", "dim_merchants"],
+      "sources": [
+        "stg_fraud_signals",
+        "dim_merchants"
+      ],
       "target": "fct_fraud_decisions",
       "type": "streaming",
       "health": {
-        "status": "healthy",
         "lastRun": "2026-05-25T05:08:00Z",
         "nextExpected": "2026-05-25T05:13:00Z",
         "checks": [
@@ -687,11 +657,13 @@
     {
       "id": "job_reconcile",
       "label": "reconcile_payments",
-      "sources": ["fct_payments", "stg_ledger"],
+      "sources": [
+        "fct_payments",
+        "stg_ledger"
+      ],
       "target": "fct_reconciliation",
       "type": "cron",
       "health": {
-        "status": "healthy",
         "lastRun": "2026-05-25T05:12:00Z",
         "nextExpected": "2026-05-25T06:12:00Z",
         "checks": [
@@ -708,11 +680,13 @@
     {
       "id": "job_build_disputes",
       "label": "build_disputes",
-      "sources": ["fct_payments", "stg_authorizations"],
+      "sources": [
+        "fct_payments",
+        "stg_authorizations"
+      ],
       "target": "fct_disputes",
       "type": "cron",
       "health": {
-        "status": "healthy",
         "lastRun": "2026-05-25T05:11:00Z",
         "nextExpected": "2026-05-25T06:11:00Z",
         "checks": [
@@ -729,11 +703,13 @@
     {
       "id": "job_settle",
       "label": "calculate_settlements",
-      "sources": ["fct_payments", "fct_reconciliation"],
+      "sources": [
+        "fct_payments",
+        "fct_reconciliation"
+      ],
       "target": "fct_settlements",
       "type": "cron",
       "health": {
-        "status": "healthy",
         "lastRun": "2026-05-25T05:15:00Z",
         "nextExpected": "2026-05-25T06:15:00Z",
         "checks": [
@@ -750,11 +726,13 @@
     {
       "id": "stream_ml_features",
       "label": "build_fraud_features",
-      "sources": ["stg_fraud_signals", "fct_payments"],
+      "sources": [
+        "stg_fraud_signals",
+        "fct_payments"
+      ],
       "target": "ml_fraud_model",
       "type": "streaming",
       "health": {
-        "status": "healthy",
         "lastRun": "2026-05-25T05:00:00Z",
         "nextExpected": "2026-05-25T05:05:00Z",
         "checks": [
@@ -771,11 +749,13 @@
     {
       "id": "job_risk_scores",
       "label": "aggregate_risk_scores",
-      "sources": ["ml_fraud_model", "fct_fraud_decisions"],
+      "sources": [
+        "ml_fraud_model",
+        "fct_fraud_decisions"
+      ],
       "target": "mart_risk_scores",
       "type": "cron",
       "health": {
-        "status": "healthy",
         "lastRun": "2026-05-25T05:07:00Z",
         "nextExpected": "2026-05-25T06:07:00Z",
         "checks": [
@@ -792,11 +772,13 @@
     {
       "id": "job_regulatory",
       "label": "build_regulatory_reports",
-      "sources": ["fct_reconciliation", "fct_settlements"],
+      "sources": [
+        "fct_reconciliation",
+        "fct_settlements"
+      ],
       "target": "mart_regulatory_reports",
       "type": "cron",
       "health": {
-        "status": "healthy",
         "lastRun": "2026-05-25T05:20:00Z",
         "nextExpected": "2026-05-25T06:20:00Z",
         "checks": [
@@ -813,11 +795,13 @@
     {
       "id": "job_revenue",
       "label": "build_revenue_dashboard",
-      "sources": ["fct_payments", "fct_settlements"],
+      "sources": [
+        "fct_payments",
+        "fct_settlements"
+      ],
       "target": "mart_revenue_dashboard",
       "type": "cron",
       "health": {
-        "status": "healthy",
         "lastRun": "2026-05-25T05:18:00Z",
         "nextExpected": "2026-05-25T06:18:00Z",
         "checks": [
