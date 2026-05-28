@@ -1,6 +1,6 @@
 export { mountAxonGraph } from "./vanilla";
 export type { MountConfig, AxonGraphInstance } from "./vanilla";
-export { propagate } from "./engine";
+export { propagate, deriveReportedStatus } from "./engine";
 export type {
   RawGraph,
   ResolvedGraph,
