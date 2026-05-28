@@ -7,6 +7,7 @@ import {
 } from "../components/AxonGraph/graphAdapters";
 import { initForceGraph } from "../components/AxonGraph/graphSetup";
 import type { ResolvedGraph, ResolvedNode, ResolvedEdge } from "../types";
+import { esc } from "../utils/esc";
 
 export interface MountConfig {
   configUrl: string;
@@ -28,10 +29,6 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   failing:  { bg: "#4a1a1a", text: "#f87171" },
   unknown:  { bg: "#2a2a2a", text: "#9ca3af" },
 };
-
-function esc(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
 
 function badge(status: string): string {
   const c = STATUS_COLORS[status] ?? STATUS_COLORS.unknown;

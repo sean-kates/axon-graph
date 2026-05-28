@@ -194,8 +194,15 @@ import type {
 ## Demo fixture
 
 ```bash
-cp node_modules/axon-graph/demo/axon-graph.json .
+curl -o axon-graph.json https://raw.githubusercontent.com/sean-kates/axon-graph/main/demo/axon-graph.json
 npx axon-graph --config axon-graph.json
+```
+
+Or clone the repo if you want all the demo files locally:
+
+```bash
+git clone https://github.com/sean-kates/axon-graph.git
+npx axon-graph --config axon-graph/demo/axon-graph.json
 ```
 
 The demo graph has 19 nodes across 4 types (`core`, `staging`, `warehouse`, `transform`) modelling a payment/fraud pipeline. `raw_transactions` is failing and `raw_fraud_signals` is unknown — their degraded status propagates downstream through the graph.
