@@ -36,7 +36,7 @@ function badge(status: string): string {
 }
 
 function buildPanelHTML(selected: ResolvedNode | ResolvedEdge): string {
-  const isNode = "size" in selected;
+  const isNode = !("sources" in selected);
   let html = "";
 
   html += `<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">`;

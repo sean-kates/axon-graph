@@ -69,7 +69,9 @@ export function buildOrbitConfigs(nodes: GraphNode[]): Map<string, OrbitConfig> 
 }
 
 function nodeColor(node: ResolvedNode): string {
-  return node.reportedStatus === "unknown" ? UNKNOWN_COLOR : scoreToColor(node.finalScore);
+  // Gray only when unmeasured AND no upstream has influenced this node
+  if (node.reportedStatus === "unknown" && node.influenceScore === 0) return UNKNOWN_COLOR;
+  return scoreToColor(node.finalScore);
 }
 
 function edgeColor(edge: ResolvedEdge): string {

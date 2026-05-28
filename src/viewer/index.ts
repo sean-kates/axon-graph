@@ -24,7 +24,7 @@ function showPanel(selected: ResolvedNode | ResolvedEdge): void {
   const panelTitle = document.getElementById("panel-title")!;
   const panelBody = document.getElementById("panel-body")!;
 
-  const isNode = "size" in selected;
+  const isNode = !("sources" in selected);
   panelType.textContent = isNode ? "Table Node" : "Job Edge";
   panelTitle.textContent = selected.label;
 

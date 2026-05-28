@@ -63,7 +63,9 @@ export function drawNode(
 
   const r = node.nodeSize;
   const glowColor = node.sourceNode
-    ? (node.sourceNode.reportedStatus === "unknown" ? UNKNOWN_GLOW : scoreToGlow(node.sourceNode.finalScore))
+    ? (node.sourceNode.reportedStatus === "unknown" && node.sourceNode.influenceScore === 0
+        ? UNKNOWN_GLOW
+        : scoreToGlow(node.sourceNode.finalScore))
     : "rgba(80,80,80,0.3)";
   const glowRadius = r * (1.5 + pulse * 0.5);
   const grd = ctx.createRadialGradient(x, y, r * 0.3, x, y, glowRadius);
