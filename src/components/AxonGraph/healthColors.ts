@@ -6,11 +6,15 @@ export const DEFAULT_HEALTH_STOPS = [
   { score: 1.0, r: 255, g: 51,  b: 51  }, // #ff3333 failing red
 ];
 
+// Gray used for unknown nodes/edges — outside the health gradient
+export const UNKNOWN_COLOR = "rgb(100,100,110)";
+export const UNKNOWN_GLOW  = "rgba(100,100,110,0.5)";
+
 export function statusToScore(status: ReportedStatus | VisualStatus): number {
   switch (status) {
     case "failing":  return 1.0;
     case "degraded": return 0.6;
-    case "unknown":  return 0.3;
+    case "unknown":  return 0.0;
     case "at_risk":  return 0.25;
     case "healthy":  return 0;
   }

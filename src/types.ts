@@ -1,6 +1,5 @@
 export type ReportedStatus = "healthy" | "failing" | "unknown";
 export type VisualStatus = "healthy" | "at_risk" | "degraded" | "failing";
-export type HealthRollup = "any" | "all" | "majority";
 export type NodeShape = "hexagon" | "circle" | "diamond" | "square";
 
 export interface HealthCheck {
@@ -11,13 +10,11 @@ export interface HealthCheck {
 }
 
 export interface NodeHealth {
-  status: ReportedStatus;
   updatedAt: string;
   checks: HealthCheck[];
 }
 
 export interface EdgeHealth {
-  status: ReportedStatus;
   lastRun?: string;
   nextExpected?: string;
   checks: HealthCheck[];
@@ -49,7 +46,6 @@ export interface RawNode {
   label: string;
   type: string;
   size: number;
-  healthRollup: HealthRollup;
   health: NodeHealth;
   meta: Record<string, unknown>;
 }
@@ -73,6 +69,7 @@ export interface RawGraph {
 }
 
 export interface ResolvedNode extends RawNode {
+  reportedStatus: ReportedStatus;
   visualStatus: VisualStatus;
   visualReason: string | null;
   finalScore: number;
@@ -80,6 +77,7 @@ export interface ResolvedNode extends RawNode {
 }
 
 export interface ResolvedEdge extends RawEdge {
+  reportedStatus: ReportedStatus;
   visualStatus: VisualStatus;
   visualReason: string | null;
 }

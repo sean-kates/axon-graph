@@ -36,7 +36,7 @@ function badge(status: string): string {
 }
 
 function buildPanelHTML(selected: ResolvedNode | ResolvedEdge): string {
-  const isNode = "healthRollup" in selected;
+  const isNode = "size" in selected;
   let html = "";
 
   html += `<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">`;
@@ -46,7 +46,7 @@ function buildPanelHTML(selected: ResolvedNode | ResolvedEdge): string {
 
   html += `<div style="display:flex;flex-direction:column;gap:12px">`;
 
-  html += `<div><div style="font-size:11px;color:#64748b;margin-bottom:6px">REPORTED STATUS</div>${badge(selected.health.status)}</div>`;
+  html += `<div><div style="font-size:11px;color:#64748b;margin-bottom:6px">REPORTED STATUS</div>${badge(selected.reportedStatus)}</div>`;
 
   html += `<div><div style="font-size:11px;color:#64748b;margin-bottom:6px">VISUAL STATUS</div>${badge(selected.visualStatus)}`;
   if (selected.visualReason) {
@@ -72,8 +72,8 @@ function buildPanelHTML(selected: ResolvedNode | ResolvedEdge): string {
     html += `<div><div style="font-size:11px;color:#64748b;margin-bottom:6px">SOURCES → TARGET</div>`;
     html += `<div style="font-size:12px;color:#94a3b8">${edge.sources.join(", ")} → ${edge.target}</div></div>`;
   } else {
-    html += `<div><div style="font-size:11px;color:#64748b;margin-bottom:6px">ROLLUP / TYPE</div>`;
-    html += `<div style="font-size:12px;color:#94a3b8">${selected.healthRollup} · ${selected.type}</div></div>`;
+    html += `<div><div style="font-size:11px;color:#64748b;margin-bottom:6px">TYPE</div>`;
+    html += `<div style="font-size:12px;color:#94a3b8">${esc(selected.type)}</div></div>`;
   }
 
   html += `</div>`;
