@@ -50,7 +50,7 @@ src/
   cli/
     index.ts                      # Node server — arg parsing, 3 routes (/, /api/axon, /viewer.js)
 demo/
-  axon-graph.json                 # 19-node payment/fraud pipeline: raw_transactions failing, raw_fraud_signals unknown → downstream degraded
+  axon-graph.json                 # 19-node payment/fraud pipeline: raw_transactions failing → downstream degraded; raw_fraud_signals unknown (gray, does not degrade neighbors)
   demo.gif                        # Preview animation used in README
 ```
 
@@ -58,7 +58,7 @@ demo/
 
 **Engine and renderer are strictly separated.** `src/engine/` has zero rendering imports. The propagation engine is the core value of the package — don't mix concerns.
 
-**`ReportedStatus` and `VisualStatus` are distinct types.** `ReportedStatus` (`healthy | failing | unknown`) is what the backend writes to the database and sends over the wire. `VisualStatus` (`healthy | at_risk | degraded | failing`) is what the propagation engine derives for rendering. `degraded` is never written to the database or sent by the backend — it is always derived by the propagation engine from upstream failing nodes. This is a hard invariant.
+**`ReportedStatus` and `VisualStatus` are distinct types.** `ReportedStatus` (`healthy | failing | unknown`) appears in `HealthCheck.status` — it is what the backend writes per-check. There is no top-level status field; the engine derives the node/edge reported status from its checks. `VisualStatus` (`healthy | at_risk | degraded | failing`) is what the propagation engine derives for rendering. `degraded` is never written to the database or sent by the backend — it is always derived by the propagation engine from upstream failing nodes. This is a hard invariant.
 
 **`reportedStatus` is derived from checks, never from a stored field.** `NodeHealth` and `EdgeHealth` have no `status` field. The propagation engine calls `deriveReportedStatus(checks)` — no checks → `unknown`, any failing check → `failing`, any unknown check (no failing) → `unknown`, all healthy → `healthy`. The derived value is stored as `ResolvedNode.reportedStatus` and `ResolvedEdge.reportedStatus`. It is never mutated after derivation. `visualStatus` is what the graph shows. `visualReason` explains the difference. The info panel always shows both.
 
