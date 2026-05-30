@@ -1,6 +1,6 @@
 {
   "name": "axon-graph",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Data pipeline health visualization library with a nervous system / star chart aesthetic",
   "type": "module",
   "main": "./dist/index.js",
