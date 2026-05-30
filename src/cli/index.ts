@@ -100,9 +100,6 @@ const server = createServer((req, res) => {
 server.listen(port, () => {
   const url = `http://localhost:${port}`;
   console.log(`\n  axon-graph viewer running at ${url}`);
+  console.log(`  Open the URL in your browser.`);
   console.log(`  Config: ${resolvedConfig}\n`);
-
-  import("open")
-    .then((mod) => mod.default(url))
-    .catch(() => {});
 });
