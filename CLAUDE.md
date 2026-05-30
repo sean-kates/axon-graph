@@ -83,7 +83,9 @@ demo/
 
 **Satellite nodes** are health checks rendered as small dots orbiting their parent. They use `dagNodeFilter((node) => !node.isSatellite)` to stay outside the DAG layer computation — without this, the DAG places them one level below their parent making them look like standalone downstream nodes. Tether links (`isTether: true`) are drawn as thin dotted lines.
 
-**Edge lines are always thin (0.75px) solid static lines.** `style` was removed from `EdgeType` — `solid | dashed | animated` no longer exists. The pulse dot is the sole visual differentiator for edge type and health. Dashed lines are not used on regular edges (tether links remain dotted as a structural distinction for satellite orbits, not an edge style).
+**Edge lines are always thin (0.75px) solid static lines.** The pulse dot is the sole visual differentiator for edge health. Dashed lines are not used on regular edges (tether links remain dotted as a structural distinction for satellite orbits, not an edge style).
+
+**`RawEdge` has no `type` field and `EdgeHealth` has no `lastRun`/`nextExpected` fields.** Edge health is fully derived from `checks[]` — cadence failures are expressed as a `HealthCheck` with `status: "failing"`. There is no edge type label; nothing in the renderer branches on edge identity beyond `visualStatus`.
 
 **Pulse animation:** Traveling dots move source→target on each edge via `drawPulse` in `drawing.ts`. `globalTime = performance.now()` is captured in `onRenderFramePre` and passed to `drawLink` as its third argument. Each link has a `phase: Math.random()` offset assigned in `graphAdapters.ts` to stagger pulses organically. Failing edges fade out mid-transit (~60% of the way) and never arrive. Streaming edges get 3 dots offset at 0/0.33/0.66. Tether links skip pulse entirely (early return in `drawLink`). `PULSE_SPEED` is a module-level constant in `drawing.ts` — tweak for feel.
 

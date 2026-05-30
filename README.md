@@ -162,9 +162,6 @@ Fan-in edges (multiple sources → one target) are handled: the worst source inf
     "core": { "label": "Core", "shape": "hexagon" }
     // shapes: hexagon | circle | diamond | square
   },
-  "edgeTypes": {
-    "cron": { "label": "Cron Job" }
-  },
   "nodes": [
     {
       "id": "events",
@@ -191,10 +188,7 @@ Fan-in edges (multiple sources → one target) are handled: the worst source inf
       "label": "enrich_events",
       "sources": ["raw_events", "users"],
       "target": "events",
-      "type": "cron",
       "health": {
-        "lastRun": "2026-05-25T09:00:00Z",
-        "nextExpected": "2026-05-25T10:00:00Z",
         "checks": [
           {
             "name": "last_run_status",
@@ -230,7 +224,7 @@ import type {
   ReportedStatus, VisualStatus,
   HealthCheck,
   NodeHealth, EdgeHealth,
-  NodeType, EdgeType,
+  NodeType,
   GraphConfig, PropagationConfig,
   MountConfig, AxonGraphInstance,
 } from 'axon-graph';
