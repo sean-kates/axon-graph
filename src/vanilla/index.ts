@@ -6,15 +6,20 @@ import {
   type OrbitConfig,
 } from "../components/AxonGraph/graphAdapters";
 import { initForceGraph } from "../components/AxonGraph/graphSetup";
-import type { ResolvedGraph, ResolvedNode, ResolvedEdge } from "../types";
+import type { RawGraph, ResolvedGraph, ResolvedNode, ResolvedEdge } from "../types";
 import { esc } from "../utils/esc";
 
-export interface MountConfig {
-  configUrl: string;
+interface MountConfigBase {
   pollInterval?: number;
   width?: number;
   height?: number;
+  onError?: (err: Error) => void;
 }
+
+export type MountConfig = MountConfigBase & (
+  | { configUrl: string; getData?: never }
+  | { getData: () => Promise<RawGraph>; configUrl?: never }
+);
 
 export interface AxonGraphInstance {
   destroy(): void;
@@ -85,11 +90,26 @@ export function mountAxonGraph(
   config: MountConfig
 ): AxonGraphInstance {
   const {
-    configUrl,
     pollInterval = DEFAULT_POLL,
-    width = el.clientWidth || 900,
-    height = el.clientHeight || 600,
+    onError,
   } = config;
+
+  const getData: () => Promise<RawGraph> = "getData" in config && config.getData
+    ? config.getData
+    : () => fetch(config.configUrl).then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json() as Promise<RawGraph>;
+      });
+
+  if (el.clientWidth === 0 || el.clientHeight === 0) {
+    console.warn(
+      "axon-graph: mountAxonGraph called with a zero-size element (clientWidth=%d, clientHeight=%d). " +
+      "The canvas will default to 900×600. Mount after layout or pass explicit width/height.",
+      el.clientWidth, el.clientHeight
+    );
+  }
+  const width = config.width ?? (el.clientWidth || 900);
+  const height = config.height ?? (el.clientHeight || 600);
 
   if (!["relative", "absolute", "fixed", "sticky"].includes(getComputedStyle(el).position)) {
     el.style.position = "relative";
@@ -172,15 +192,14 @@ export function mountAxonGraph(
 
   async function fetchAndRender(): Promise<void> {
     try {
-      const res = await fetch(configUrl);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const raw = await res.json();
+      const raw = await getData();
       if (!destroyed) {
         applyGraphData(raw);
         timestamp.textContent = "Last updated: " + new Date().toLocaleTimeString();
       }
-    } catch {
-      // leave previous graph state intact on transient fetch failures
+    } catch (err) {
+      // leave previous graph state intact on transient failures
+      onError?.(err instanceof Error ? err : new Error(String(err)));
     }
   }
 
