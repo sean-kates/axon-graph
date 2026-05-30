@@ -14,7 +14,6 @@ export type {
   NodeHealth,
   EdgeHealth,
   NodeType,
-  EdgeType,
   GraphConfig,
   PropagationConfig,
 } from "./types";

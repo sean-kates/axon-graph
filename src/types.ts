@@ -25,10 +25,6 @@ export interface NodeType {
   shape: NodeShape;
 }
 
-export interface EdgeType {
-  label: string;
-}
-
 export interface PropagationConfig {
   decayFactor: number;
   maxDepth: number;
@@ -63,7 +59,6 @@ export interface RawEdge {
 export interface RawGraph {
   config: GraphConfig;
   nodeTypes: Record<string, NodeType>;
-  edgeTypes: Record<string, EdgeType>;
   nodes: RawNode[];
   edges: RawEdge[];
 }
@@ -85,7 +80,6 @@ export interface ResolvedEdge extends RawEdge {
 export interface ResolvedGraph {
   config: GraphConfig;
   nodeTypes: Record<string, NodeType>;
-  edgeTypes: Record<string, EdgeType>;
   nodes: ResolvedNode[];
   edges: ResolvedEdge[];
 }

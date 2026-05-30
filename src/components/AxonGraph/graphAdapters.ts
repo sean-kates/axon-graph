@@ -28,7 +28,6 @@ export interface GraphLink {
   label: string;
   phase: number;
   visualStatus?: VisualStatus;
-  edgeType?: string;
   sourceEdge?: ResolvedEdge;
   isSynthetic?: boolean;
   isTether?: boolean;
@@ -125,7 +124,6 @@ export function buildGraphData(graph: ResolvedGraph): GraphData {
         label: edge.label,
         phase: Math.random(),
         visualStatus: edge.visualStatus,
-        edgeType: edge.type,
         sourceEdge: edge,
       });
     } else {
@@ -149,7 +147,6 @@ export function buildGraphData(graph: ResolvedGraph): GraphData {
           label: "",
           phase: Math.random(),
           visualStatus: edge.visualStatus,
-          edgeType: edge.type,
           sourceEdge: edge,
           isSynthetic: true,
         });
@@ -164,7 +161,6 @@ export function buildGraphData(graph: ResolvedGraph): GraphData {
         label: edge.label,
         phase: Math.random(),
         visualStatus: edge.visualStatus,
-        edgeType: edge.type,
         sourceEdge: edge,
         isSynthetic: true,
       });
