@@ -30,22 +30,54 @@ const instance = mountAxonGraph(document.getElementById('graph')!, {
 instance.destroy();
 ```
 
-Your endpoint at `configUrl` must return a `RawGraph` JSON object (see schema below). `mountAxonGraph` owns the fetch/poll loop — no external state management needed.
+Pass either `configUrl` (URL that returns `RawGraph` JSON) or `getData` (any async function returning `RawGraph`). `mountAxonGraph` owns the poll loop — no external state management needed.
 
 ### MountConfig
 
+Exactly one of `configUrl` or `getData` is required.
+
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `configUrl` | `string` | required | URL that returns a `RawGraph` |
+| `configUrl` | `string` | — | URL polled on each interval; must return `RawGraph` JSON |
+| `getData` | `() => Promise<RawGraph>` | — | Custom async data source — use for reactive sources, in-memory data, or non-HTTP transports |
 | `pollInterval` | `number` | `30000` | Milliseconds between refreshes |
-| `width` | `number` | element width or `900` | Canvas width in px |
-| `height` | `number` | element height or `600` | Canvas height in px |
+| `width` | `number` | element width or `900` | Canvas width in px — pass explicitly if mounting before first paint |
+| `height` | `number` | element height or `600` | Canvas height in px — pass explicitly if mounting before first paint |
+| `onError` | `(err: Error) => void` | — | Called on each fetch/getData failure; previous graph state is preserved |
+
+**Width/height note:** `clientWidth`/`clientHeight` are read at mount time. If the element has not been laid out yet (e.g. mounted in a hidden container), they will be zero and the canvas will default to 900×600 with a console warning. Pass explicit `width`/`height` to avoid this.
 
 ### AxonGraphInstance
 
 | Method | Description |
 |---|---|
 | `destroy()` | Stops polling and tears down the canvas |
+
+**Known limitation:** `force-graph` has no public cleanup method. `destroy()` wipes `innerHTML` to remove the canvas, but any `window`/`document` event listeners attached internally by `force-graph` will leak. This is acceptable for typical single-mount usage but can accumulate in apps that rapidly create and destroy many instances (e.g. React Strict Mode double-invocation). Track [force-graph #1052](https://github.com/vasturiano/force-graph/issues/1052) for upstream resolution.
+
+### Advanced: `getData` examples
+
+```ts
+// Static / already-fetched data
+mountAxonGraph(el, {
+  getData: () => Promise.resolve(myRawGraph),
+});
+
+// Meteor reactive computation
+mountAxonGraph(el, {
+  getData: () => new Promise((resolve) => {
+    Tracker.autorun(() => resolve(GraphCollection.findOne()));
+  }),
+  pollInterval: 5000,
+  onError: (err) => console.error('graph fetch failed', err),
+});
+
+// Custom transport with error visibility
+mountAxonGraph(el, {
+  getData: () => myGrpcClient.getGraph(),
+  onError: (err) => toastService.error(`Graph unavailable: ${err.message}`),
+});
+```
 
 ## React wrapper (10 lines)
 
@@ -61,7 +93,7 @@ export function AxonGraph(props: MountConfig) {
     if (!ref.current) return;
     const instance = mountAxonGraph(ref.current, props);
     return () => instance.destroy();
-  }, [props.configUrl, props.pollInterval, props.width, props.height]);
+  }, [props.configUrl, props.getData, props.pollInterval, props.width, props.height]);
   return <div ref={ref} />;
 }
 ```
