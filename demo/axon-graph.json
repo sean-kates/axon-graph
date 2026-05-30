@@ -26,17 +26,6 @@
       "shape": "square"
     }
   },
-  "edgeTypes": {
-    "cron": {
-      "label": "Cron Job"
-    },
-    "event": {
-      "label": "Event Triggered"
-    },
-    "streaming": {
-      "label": "Streaming"
-    }
-  },
   "nodes": [
     {
       "id": "raw_transactions",

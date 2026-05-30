@@ -11,10 +11,6 @@ const baseNodeTypes = {
   core: { label: "Core", shape: "hexagon" as const },
 };
 
-const baseEdgeTypes = {
-  cron: { label: "Cron" },
-};
-
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
 function fCheck(name = "s"): HealthCheck {
@@ -51,7 +47,6 @@ function makeGraph(partial: Partial<RawGraph>): RawGraph {
   return {
     config: baseConfig,
     nodeTypes: baseNodeTypes,
-    edgeTypes: baseEdgeTypes,
     nodes: [],
     edges: [],
     ...partial,

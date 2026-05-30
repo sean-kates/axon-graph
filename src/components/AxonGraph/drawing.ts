@@ -119,7 +119,7 @@ function drawPulse(
   const tx = target.x ?? 0;
   const ty = target.y ?? 0;
 
-  const offsets = link.edgeType === "streaming" ? [0, 0.33, 0.66] : [0];
+  const offsets = [0];
 
   for (const offset of offsets) {
     const t = (globalTime * PULSE_SPEED + (link.phase ?? 0) + offset) % 1;
