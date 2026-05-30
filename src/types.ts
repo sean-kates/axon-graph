@@ -15,8 +15,6 @@ export interface NodeHealth {
 }
 
 export interface EdgeHealth {
-  lastRun?: string;
-  nextExpected?: string;
   checks: HealthCheck[];
 }
 
@@ -51,7 +49,6 @@ export interface RawEdge {
   label: string;
   sources: string[];
   target: string;
-  type: string;
   health: EdgeHealth;
   meta: Record<string, unknown>;
 }

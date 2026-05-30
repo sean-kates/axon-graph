@@ -40,7 +40,7 @@ function makeEdge(
   target: string,
   checks: HealthCheck[] = []
 ): RawEdge {
-  return { id, label: id, sources, target, type: "cron", health: { checks }, meta: {} };
+  return { id, label: id, sources, target, health: { checks }, meta: {} };
 }
 
 function makeGraph(partial: Partial<RawGraph>): RawGraph {
