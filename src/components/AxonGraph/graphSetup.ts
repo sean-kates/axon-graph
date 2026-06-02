@@ -51,7 +51,7 @@ export function initForceGraph(
       }
     })
     .nodeCanvasObject((node: object, ctx: CanvasRenderingContext2D, globalScale: number) => {
-      drawNode(node as GraphNode, ctx, cb.getFrameTime(), cb.getResolvedGraph(), globalScale);
+      drawNode(node as GraphNode, ctx, cb.getFrameTime(), globalScale);
     })
     .nodeCanvasObjectMode(() => "replace")
     .linkCanvasObject((link: object, ctx: CanvasRenderingContext2D) => {

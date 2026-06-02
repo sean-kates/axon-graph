@@ -18,11 +18,6 @@ export interface EdgeHealth {
   checks: HealthCheck[];
 }
 
-export interface NodeType {
-  label: string;
-  shape: NodeShape;
-}
-
 export interface PropagationConfig {
   decayFactor: number;
   maxDepth: number;
@@ -38,7 +33,7 @@ export interface GraphConfig {
 export interface RawNode {
   id: string;
   label: string;
-  type: string;
+  shape: NodeShape;
   size: number;
   health: NodeHealth;
   meta: Record<string, unknown>;
@@ -55,7 +50,6 @@ export interface RawEdge {
 
 export interface RawGraph {
   config: GraphConfig;
-  nodeTypes: Record<string, NodeType>;
   nodes: RawNode[];
   edges: RawEdge[];
 }
@@ -76,7 +70,6 @@ export interface ResolvedEdge extends RawEdge {
 
 export interface ResolvedGraph {
   config: GraphConfig;
-  nodeTypes: Record<string, NodeType>;
   nodes: ResolvedNode[];
   edges: ResolvedEdge[];
 }

@@ -158,15 +158,12 @@ Fan-in edges (multiple sources → one target) are handled: the worst source inf
       "maxDepth": 5         // max hops to propagate
     }
   },
-  "nodeTypes": {
-    "core": { "label": "Core", "shape": "hexagon" }
-    // shapes: hexagon | circle | diamond | square
-  },
   "nodes": [
     {
       "id": "events",
       "label": "events",
-      "type": "core",
+      "shape": "hexagon",
+      // shapes: hexagon | circle | diamond | square
       "size": 2.0,
       "health": {
         "updatedAt": "2026-05-25T10:00:00Z",
@@ -224,7 +221,7 @@ import type {
   ReportedStatus, VisualStatus,
   HealthCheck,
   NodeHealth, EdgeHealth,
-  NodeType,
+  NodeShape,
   GraphConfig, PropagationConfig,
   MountConfig, AxonGraphInstance,
 } from 'axon-graph';
@@ -244,4 +241,4 @@ git clone https://github.com/sean-kates/axon-graph.git
 npx axon-graph --config axon-graph/demo/axon-graph.json
 ```
 
-The demo graph has 19 nodes across 4 types (`core`, `staging`, `warehouse`, `transform`) modelling a payment/fraud pipeline. `raw_transactions` is failing (two failing checks) and `raw_fraud_signals` is unknown (two unknown checks — vendor API is slow, no clean signal). The failing status propagates downstream from `raw_transactions` and renders amber/red on affected nodes; `raw_fraud_signals` renders gray and does not degrade its neighbors.
+The demo graph has 19 nodes across 4 shapes (`hexagon`, `square`, `diamond`, `circle`) modelling a payment/fraud pipeline. `raw_transactions` is failing (two failing checks) and `raw_fraud_signals` is unknown (two unknown checks — vendor API is slow, no clean signal). The failing status propagates downstream from `raw_transactions` and renders amber/red on affected nodes; `raw_fraud_signals` renders gray and does not degrade its neighbors.

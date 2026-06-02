@@ -7,10 +7,6 @@ const baseConfig = {
   propagation: { decayFactor: 0.5, maxDepth: 5 },
 };
 
-const baseNodeTypes = {
-  core: { label: "Core", shape: "hexagon" as const },
-};
-
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
 function fCheck(name = "s"): HealthCheck {
@@ -27,7 +23,7 @@ function makeNode(id: string, checks: HealthCheck[], label?: string): RawNode {
   return {
     id,
     label: label ?? id.toUpperCase(),
-    type: "core",
+    shape: "hexagon",
     size: 1,
     health: { updatedAt: "", checks },
     meta: {},
@@ -46,7 +42,6 @@ function makeEdge(
 function makeGraph(partial: Partial<RawGraph>): RawGraph {
   return {
     config: baseConfig,
-    nodeTypes: baseNodeTypes,
     nodes: [],
     edges: [],
     ...partial,
