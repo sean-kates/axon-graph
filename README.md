@@ -201,6 +201,15 @@ Fan-in edges (multiple sources → one target) are handled: the worst source inf
 }
 ```
 
+### Upgrading from 0.4 → 0.5
+
+Per-node rendering is now self-describing. Two breaking schema changes:
+
+- Replace each node's `"type": "<key>"` with `"shape": "hexagon" | "circle" | "diamond" | "square"`.
+- Remove the top-level `"nodeTypes"` registry — it's gone.
+
+If your old payloads used the `nodeTypes[type].label` field for grouping or labelling in your own UI, move that information into per-node `meta` (e.g. `"meta": { "kind": "Warehouse" }`).
+
 ## Visual design
 
 - **Force-directed, DAG-aware** layout (top-down)
@@ -241,4 +250,4 @@ git clone https://github.com/sean-kates/axon-graph.git
 npx axon-graph --config axon-graph/demo/axon-graph.json
 ```
 
-The demo graph has 19 nodes across 4 shapes (`hexagon`, `square`, `diamond`, `circle`) modelling a payment/fraud pipeline. `raw_transactions` is failing (two failing checks) and `raw_fraud_signals` is unknown (two unknown checks — vendor API is slow, no clean signal). The failing status propagates downstream from `raw_transactions` and renders amber/red on affected nodes; `raw_fraud_signals` renders gray and does not degrade its neighbors.
+The demo graph models a 19-node payment/fraud pipeline. `raw_transactions` is failing (two failing checks) and `raw_fraud_signals` is unknown (two unknown checks — vendor API is slow, no clean signal). The failing status propagates downstream from `raw_transactions` and renders amber/red on affected nodes; `raw_fraud_signals` renders gray and does not degrade its neighbors.

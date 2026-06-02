@@ -1,3 +1,4 @@
+import type { NodeShape } from "../../types";
 import type { GraphNode, GraphLink } from "./graphAdapters";
 import { scoreToGlow, UNKNOWN_GLOW } from "./healthColors";
 
@@ -10,7 +11,7 @@ function getPhase(id: string): number {
 
 export function drawShape(
   ctx: CanvasRenderingContext2D,
-  shape: string,
+  shape: NodeShape,
   x: number,
   y: number,
   r: number
