@@ -13,7 +13,7 @@ export type {
   HealthCheck,
   NodeHealth,
   EdgeHealth,
-  NodeType,
+  NodeShape,
   GraphConfig,
   PropagationConfig,
 } from "./types";

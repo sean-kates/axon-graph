@@ -1,4 +1,4 @@
-import type { ResolvedGraph } from "../../types";
+import type { NodeShape } from "../../types";
 import type { GraphNode, GraphLink } from "./graphAdapters";
 import { scoreToGlow, UNKNOWN_GLOW } from "./healthColors";
 
@@ -11,7 +11,7 @@ function getPhase(id: string): number {
 
 export function drawShape(
   ctx: CanvasRenderingContext2D,
-  shape: string,
+  shape: NodeShape,
   x: number,
   y: number,
   r: number
@@ -45,7 +45,6 @@ export function drawNode(
   node: GraphNode,
   ctx: CanvasRenderingContext2D,
   frameTime: number,
-  resolvedGraph: ResolvedGraph | null,
   globalScale: number = 1
 ): void {
   const t = frameTime + getPhase(node.id);
@@ -76,10 +75,7 @@ export function drawNode(
   ctx.fillStyle = grd;
   ctx.fill();
 
-  const shape =
-    node.sourceNode && resolvedGraph
-      ? (resolvedGraph.nodeTypes[node.sourceNode.type]?.shape ?? "circle")
-      : "circle";
+  const shape = node.sourceNode?.shape ?? "circle";
 
   ctx.beginPath();
   drawShape(ctx, shape, x, y, r * pulse);

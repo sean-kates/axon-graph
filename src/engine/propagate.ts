@@ -159,7 +159,6 @@ export function propagate(graph: RawGraph): ResolvedGraph {
 
   return {
     config: graph.config,
-    nodeTypes: graph.nodeTypes,
     nodes: resolvedNodes,
     edges: resolvedEdges,
   };
