@@ -187,16 +187,14 @@ export function drawLink(
   ctx.stroke();
   ctx.setLineDash([]);
 
-  if (!link.isSynthetic) {
-    const angle = Math.atan2(ty - sy, tx - sx);
-    ctx.beginPath();
-    ctx.moveTo(tx, ty);
-    ctx.lineTo(tx - 8 * Math.cos(angle - 0.4), ty - 8 * Math.sin(angle - 0.4));
-    ctx.lineTo(tx - 8 * Math.cos(angle + 0.4), ty - 8 * Math.sin(angle + 0.4));
-    ctx.closePath();
-    ctx.fillStyle = link.color;
-    ctx.fill();
-  }
+  const angle = Math.atan2(ty - sy, tx - sx);
+  ctx.beginPath();
+  ctx.moveTo(tx, ty);
+  ctx.lineTo(tx - 8 * Math.cos(angle - 0.4), ty - 8 * Math.sin(angle - 0.4));
+  ctx.lineTo(tx - 8 * Math.cos(angle + 0.4), ty - 8 * Math.sin(angle + 0.4));
+  ctx.closePath();
+  ctx.fillStyle = link.color;
+  ctx.fill();
 
   drawPulse(ctx, link, globalTime);
 }

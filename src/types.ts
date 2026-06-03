@@ -42,7 +42,7 @@ export interface RawNode {
 export interface RawEdge {
   id: string;
   label: string;
-  sources: string[];
+  source: string;
   target: string;
   health: EdgeHealth;
   meta: Record<string, unknown>;

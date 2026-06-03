@@ -94,10 +94,8 @@ export function propagate(graph: RawGraph): ResolvedGraph {
     outTargets.set(node.id, []);
   }
   for (const edge of graph.edges) {
-    for (const src of edge.sources) {
-      outEdges.get(src)?.push(edge.id);
-      outTargets.get(src)?.push(edge.target);
-    }
+    outEdges.get(edge.source)?.push(edge.id);
+    outTargets.get(edge.source)?.push(edge.target);
   }
 
   // For each node, track the highest continuous influence score arriving from upstream
@@ -162,28 +160,20 @@ export function propagate(graph: RawGraph): ResolvedGraph {
 
   const resolvedNodeMap = new Map(resolvedNodes.map((n) => [n.id, n]));
 
-  // Resolve edges: visualStatus = worst of (own health, worst source visualStatus)
+  // Resolve edges: visualStatus = worst of (own health, source node visualStatus)
   const resolvedEdges: ResolvedEdge[] = graph.edges.map((edge) => {
     const reportedStatus = deriveReportedStatus(edge.health.checks);
     const ownVisual = reportedToVisual(reportedStatus);
 
-    let worstSourceStatus: VisualStatus = "healthy";
-    let worstSourceLabel: string | null = null;
-    for (const srcId of edge.sources) {
-      const srcNode = resolvedNodeMap.get(srcId);
-      if (srcNode) {
-        const srcStatus = visualToEdgeStatus(srcNode.visualStatus);
-        if (VISUAL_SEVERITY[srcStatus] > VISUAL_SEVERITY[worstSourceStatus]) {
-          worstSourceStatus = srcStatus;
-          worstSourceLabel = srcNode.label;
-        }
-      }
-    }
+    const srcNode = resolvedNodeMap.get(edge.source);
+    const sourceStatus: VisualStatus = srcNode
+      ? visualToEdgeStatus(srcNode.visualStatus)
+      : "healthy";
 
-    const visualStatus = worstVisualStatus(ownVisual, worstSourceStatus);
+    const visualStatus = worstVisualStatus(ownVisual, sourceStatus);
     const visualReason =
-      visualStatus !== ownVisual && worstSourceLabel
-        ? `Source node ${worstSourceLabel} is ${worstSourceStatus}`
+      visualStatus !== ownVisual && srcNode
+        ? `Source node ${srcNode.label} is ${sourceStatus}`
         : null;
 
     return { ...edge, reportedStatus, visualStatus, visualReason };

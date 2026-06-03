@@ -41,7 +41,7 @@ function badge(status: string): string {
 }
 
 function buildPanelHTML(selected: ResolvedNode | ResolvedEdge): string {
-  const isNode = !("sources" in selected);
+  const isNode = !("source" in selected);
   let html = "";
 
   html += `<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">`;
@@ -74,8 +74,8 @@ function buildPanelHTML(selected: ResolvedNode | ResolvedEdge): string {
 
   if (!isNode) {
     const edge = selected as ResolvedEdge;
-    html += `<div><div style="font-size:11px;color:#64748b;margin-bottom:6px">SOURCES → TARGET</div>`;
-    html += `<div style="font-size:12px;color:#94a3b8">${esc(edge.sources.join(", "))} → ${esc(edge.target)}</div></div>`;
+    html += `<div><div style="font-size:11px;color:#64748b;margin-bottom:6px">SOURCE → TARGET</div>`;
+    html += `<div style="font-size:12px;color:#94a3b8">${esc(edge.source)} → ${esc(edge.target)}</div></div>`;
   }
 
   html += `</div>`;

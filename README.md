@@ -145,7 +145,7 @@ Downstream propagation:
 5. `visualStatus` = worst of `reportedStatus` and the derived upstream status
 6. Stop at `maxDepth` hops
 
-Fan-in edges (multiple sources → one target) are handled: the worst source influence wins.
+Fan-in (multiple upstream nodes → one target) is handled at the node level: when several edges share a target, the target picks up the worst arriving influence across those edges.
 
 ## Config schema
 
@@ -181,9 +181,26 @@ Fan-in edges (multiple sources → one target) are handled: the worst source inf
   ],
   "edges": [
     {
-      "id": "job_enrich",
+      "id": "job_enrich__raw_events",
       "label": "enrich_events",
-      "sources": ["raw_events", "users"],
+      "source": "raw_events",
+      "target": "events",
+      "health": {
+        "checks": [
+          {
+            "name": "last_run_status",
+            "status": "healthy",
+            "message": "Job completed in 1m 12s",
+            "checkedAt": "2026-05-25T09:00:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "job_enrich__users",
+      "label": "enrich_events",
+      "source": "users",
       "target": "events",
       "health": {
         "checks": [
@@ -200,6 +217,23 @@ Fan-in edges (multiple sources → one target) are handled: the worst source inf
   ]
 }
 ```
+
+### Upgrading from 0.5 → 0.6
+
+Breaking change: `RawEdge.sources: string[]` is replaced by `RawEdge.source: string`. An edge is now a single directed connection from one source to one target — the universal graph edge primitive. Fan-in and fan-out emerge naturally from multiple edges that share a target or source.
+
+To migrate: split any edge that had multiple sources into one edge per source, each with a unique `id`, sharing the same `target`. For example:
+
+```jsonc
+// Before (0.5.x)
+{ "id": "job_enrich", "sources": ["raw_events", "users"], "target": "events", ... }
+
+// After (0.6.0)
+{ "id": "job_enrich__raw_events", "source": "raw_events", "target": "events", ... },
+{ "id": "job_enrich__users",      "source": "users",      "target": "events", ... }
+```
+
+Propagation behavior is unchanged: a target with multiple upstream paths still picks up the worst arriving influence — that logic now operates across edges sharing the target rather than within a single edge's source list.
 
 ### Upgrading from 0.4 → 0.5
 

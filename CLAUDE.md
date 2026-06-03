@@ -79,7 +79,7 @@ demo/
 
 **Unknown renders gray and carries zero propagation weight.** `unknown` means "no signal" — the node is unmeasured, not unhealthy. Rendering: gray (`rgb(100,100,110)`), outside the green→red gradient. A node renders gray only when `reportedStatus === "unknown" AND influenceScore === 0`. If upstream influence has pushed the node's `visualStatus` above `healthy`, the gradient color takes over (color and panel stay consistent). An unknown node's score is 0, so it never degrades downstream neighbors — do not change `REPORTED_SCORES.unknown` without considering this invariant.
 
-**Fan-in edges** (multiple sources → one target): rendered as a synthetic hub node in the graph data. The hub has `isSatellite: false` and no `sourceNode`. Don't promote multi-target jobs to nodes — that's a schema concern.
+**Edges use single `source` and `target` as of 0.6.0** (was `sources: string[]`). An edge is one directed connection — the universal graph edge primitive. Fan-in and fan-out emerge from multiple edges sharing a target or source, not from arrays inside a single edge. This is a breaking change from 0.5.x. The propagation engine's "worst arriving influence at a node" logic operates across edges sharing a target, not within an edge's source list.
 
 **Satellite nodes** are health checks rendered as small dots orbiting their parent. They use `dagNodeFilter((node) => !node.isSatellite)` to stay outside the DAG layer computation — without this, the DAG places them one level below their parent making them look like standalone downstream nodes. Tether links (`isTether: true`) are drawn as thin dotted lines.
 
