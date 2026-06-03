@@ -24,7 +24,7 @@ function showPanel(selected: ResolvedNode | ResolvedEdge): void {
   const panelTitle = document.getElementById("panel-title")!;
   const panelBody = document.getElementById("panel-body")!;
 
-  const isNode = !("sources" in selected);
+  const isNode = !("source" in selected);
   panelType.textContent = isNode ? "Table Node" : "Job Edge";
   panelTitle.textContent = selected.label;
 
@@ -49,8 +49,8 @@ function showPanel(selected: ResolvedNode | ResolvedEdge): void {
 
   if (!isNode) {
     const edge = selected as ResolvedEdge;
-    html += `<div class="section"><div class="section-label">SOURCES → TARGET</div>`;
-    html += `<div style="font-size:12px;color:#94a3b8">${esc(edge.sources.join(", "))} → ${esc(edge.target)}</div></div>`;
+    html += `<div class="section"><div class="section-label">SOURCE → TARGET</div>`;
+    html += `<div style="font-size:12px;color:#94a3b8">${esc(edge.source)} → ${esc(edge.target)}</div></div>`;
   }
 
   panelBody.innerHTML = html;

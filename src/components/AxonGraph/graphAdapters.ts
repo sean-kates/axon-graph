@@ -29,7 +29,6 @@ export interface GraphLink {
   phase: number;
   visualStatus?: VisualStatus;
   sourceEdge?: ResolvedEdge;
-  isSynthetic?: boolean;
   isTether?: boolean;
 }
 
@@ -112,59 +111,16 @@ export function buildGraphData(graph: ResolvedGraph): GraphData {
   }
 
   for (const edge of graph.edges) {
-    const color = edgeColor(edge);
-
-    if (edge.sources.length === 1) {
-      // Simple edge: source → target
-      links.push({
-        id: edge.id,
-        source: edge.sources[0],
-        target: edge.target,
-        color,
-        label: edge.label,
-        phase: Math.random(),
-        visualStatus: edge.visualStatus,
-        sourceEdge: edge,
-      });
-    } else {
-      // Fan-in: create a synthetic hub node at the edge level
-      const hubId = `__hub__${edge.id}`;
-      nodes.push({
-        id: hubId,
-        label: edge.label,
-        color,
-        nodeSize: 5,
-        isSatellite: false,
-      });
-
-      // Each source → hub
-      for (const srcId of edge.sources) {
-        links.push({
-          id: `${edge.id}__in__${srcId}`,
-          source: srcId,
-          target: hubId,
-          color,
-          label: "",
-          phase: Math.random(),
-          visualStatus: edge.visualStatus,
-          sourceEdge: edge,
-          isSynthetic: true,
-        });
-      }
-
-      // Hub → target
-      links.push({
-        id: `${edge.id}__out`,
-        source: hubId,
-        target: edge.target,
-        color,
-        label: edge.label,
-        phase: Math.random(),
-        visualStatus: edge.visualStatus,
-        sourceEdge: edge,
-        isSynthetic: true,
-      });
-    }
+    links.push({
+      id: edge.id,
+      source: edge.source,
+      target: edge.target,
+      color: edgeColor(edge),
+      label: edge.label,
+      phase: Math.random(),
+      visualStatus: edge.visualStatus,
+      sourceEdge: edge,
+    });
   }
 
   // Satellite tether links — visible but subtle
@@ -177,7 +133,6 @@ export function buildGraphData(graph: ResolvedGraph): GraphData {
         color: "rgba(255,255,255,0.18)",
         label: "",
         phase: 0,
-        isSynthetic: true,
         isTether: true,
       });
     }

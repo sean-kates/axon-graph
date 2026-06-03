@@ -475,7 +475,7 @@
     {
       "id": "job_load_transactions",
       "label": "load_transactions",
-      "sources": ["raw_transactions"],
+      "source": "raw_transactions",
       "target": "stg_transactions",
       "health": {
         "checks": [
@@ -492,7 +492,7 @@
     {
       "id": "stream_fraud_signals",
       "label": "ingest_fraud_signals",
-      "sources": ["raw_fraud_signals"],
+      "source": "raw_fraud_signals",
       "target": "stg_fraud_signals",
       "health": {
         "checks": [
@@ -509,7 +509,7 @@
     {
       "id": "job_load_ledger",
       "label": "load_ledger",
-      "sources": ["raw_ledger_entries"],
+      "source": "raw_ledger_entries",
       "target": "stg_ledger",
       "health": {
         "checks": [
@@ -526,7 +526,7 @@
     {
       "id": "job_load_authorizations",
       "label": "load_authorizations",
-      "sources": ["raw_authorizations"],
+      "source": "raw_authorizations",
       "target": "stg_authorizations",
       "health": {
         "checks": [
@@ -541,9 +541,9 @@
       "meta": {}
     },
     {
-      "id": "job_build_fct_payments",
+      "id": "job_build_fct_payments__stg_transactions",
       "label": "build_fct_payments",
-      "sources": ["stg_transactions", "dim_accounts"],
+      "source": "stg_transactions",
       "target": "fct_payments",
       "health": {
         "checks": [
@@ -558,9 +558,26 @@
       "meta": {}
     },
     {
-      "id": "stream_fraud_decisions",
+      "id": "job_build_fct_payments__dim_accounts",
+      "label": "build_fct_payments",
+      "source": "dim_accounts",
+      "target": "fct_payments",
+      "health": {
+        "checks": [
+          {
+            "name": "last_run_status",
+            "status": "healthy",
+            "message": "Job completed in 2m 14s",
+            "checkedAt": "2026-05-25T05:10:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "stream_fraud_decisions__stg_fraud_signals",
       "label": "score_fraud",
-      "sources": ["stg_fraud_signals", "dim_merchants"],
+      "source": "stg_fraud_signals",
       "target": "fct_fraud_decisions",
       "health": {
         "checks": [
@@ -575,9 +592,26 @@
       "meta": {}
     },
     {
-      "id": "job_reconcile",
+      "id": "stream_fraud_decisions__dim_merchants",
+      "label": "score_fraud",
+      "source": "dim_merchants",
+      "target": "fct_fraud_decisions",
+      "health": {
+        "checks": [
+          {
+            "name": "throughput",
+            "status": "healthy",
+            "message": "Scoring 180 decisions/min — nominal",
+            "checkedAt": "2026-05-25T05:08:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "job_reconcile__fct_payments",
       "label": "reconcile_payments",
-      "sources": ["fct_payments", "stg_ledger"],
+      "source": "fct_payments",
       "target": "fct_reconciliation",
       "health": {
         "checks": [
@@ -592,9 +626,26 @@
       "meta": {}
     },
     {
-      "id": "job_build_disputes",
+      "id": "job_reconcile__stg_ledger",
+      "label": "reconcile_payments",
+      "source": "stg_ledger",
+      "target": "fct_reconciliation",
+      "health": {
+        "checks": [
+          {
+            "name": "last_run_status",
+            "status": "healthy",
+            "message": "Job completed in 4m 37s",
+            "checkedAt": "2026-05-25T05:12:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "job_build_disputes__fct_payments",
       "label": "build_disputes",
-      "sources": ["fct_payments", "stg_authorizations"],
+      "source": "fct_payments",
       "target": "fct_disputes",
       "health": {
         "checks": [
@@ -609,9 +660,26 @@
       "meta": {}
     },
     {
-      "id": "job_settle",
+      "id": "job_build_disputes__stg_authorizations",
+      "label": "build_disputes",
+      "source": "stg_authorizations",
+      "target": "fct_disputes",
+      "health": {
+        "checks": [
+          {
+            "name": "last_run_status",
+            "status": "healthy",
+            "message": "Job completed in 1m 58s",
+            "checkedAt": "2026-05-25T05:11:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "job_settle__fct_payments",
       "label": "calculate_settlements",
-      "sources": ["fct_payments", "fct_reconciliation"],
+      "source": "fct_payments",
       "target": "fct_settlements",
       "health": {
         "checks": [
@@ -626,9 +694,26 @@
       "meta": {}
     },
     {
-      "id": "stream_ml_features",
+      "id": "job_settle__fct_reconciliation",
+      "label": "calculate_settlements",
+      "source": "fct_reconciliation",
+      "target": "fct_settlements",
+      "health": {
+        "checks": [
+          {
+            "name": "last_run_status",
+            "status": "healthy",
+            "message": "Job completed in 3m 02s",
+            "checkedAt": "2026-05-25T05:15:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "stream_ml_features__stg_fraud_signals",
       "label": "build_fraud_features",
-      "sources": ["stg_fraud_signals", "fct_payments"],
+      "source": "stg_fraud_signals",
       "target": "ml_fraud_model",
       "health": {
         "checks": [
@@ -643,9 +728,26 @@
       "meta": {}
     },
     {
-      "id": "job_risk_scores",
+      "id": "stream_ml_features__fct_payments",
+      "label": "build_fraud_features",
+      "source": "fct_payments",
+      "target": "ml_fraud_model",
+      "health": {
+        "checks": [
+          {
+            "name": "feature_lag",
+            "status": "healthy",
+            "message": "Feature pipeline lag 82ms p99",
+            "checkedAt": "2026-05-25T05:00:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "job_risk_scores__ml_fraud_model",
       "label": "aggregate_risk_scores",
-      "sources": ["ml_fraud_model", "fct_fraud_decisions"],
+      "source": "ml_fraud_model",
       "target": "mart_risk_scores",
       "health": {
         "checks": [
@@ -660,9 +762,26 @@
       "meta": {}
     },
     {
-      "id": "job_regulatory",
+      "id": "job_risk_scores__fct_fraud_decisions",
+      "label": "aggregate_risk_scores",
+      "source": "fct_fraud_decisions",
+      "target": "mart_risk_scores",
+      "health": {
+        "checks": [
+          {
+            "name": "last_run_status",
+            "status": "healthy",
+            "message": "Job completed in 2m 41s",
+            "checkedAt": "2026-05-25T05:07:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "job_regulatory__fct_reconciliation",
       "label": "build_regulatory_reports",
-      "sources": ["fct_reconciliation", "fct_settlements"],
+      "source": "fct_reconciliation",
       "target": "mart_regulatory_reports",
       "health": {
         "checks": [
@@ -677,9 +796,43 @@
       "meta": {}
     },
     {
-      "id": "job_revenue",
+      "id": "job_regulatory__fct_settlements",
+      "label": "build_regulatory_reports",
+      "source": "fct_settlements",
+      "target": "mart_regulatory_reports",
+      "health": {
+        "checks": [
+          {
+            "name": "last_run_status",
+            "status": "healthy",
+            "message": "Job completed in 5m 18s",
+            "checkedAt": "2026-05-25T05:20:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "job_revenue__fct_payments",
       "label": "build_revenue_dashboard",
-      "sources": ["fct_payments", "fct_settlements"],
+      "source": "fct_payments",
+      "target": "mart_revenue_dashboard",
+      "health": {
+        "checks": [
+          {
+            "name": "last_run_status",
+            "status": "healthy",
+            "message": "Job completed in 1m 53s",
+            "checkedAt": "2026-05-25T05:18:00Z"
+          }
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "id": "job_revenue__fct_settlements",
+      "label": "build_revenue_dashboard",
+      "source": "fct_settlements",
       "target": "mart_revenue_dashboard",
       "health": {
         "checks": [

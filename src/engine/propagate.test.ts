@@ -43,11 +43,11 @@ function makeNodeNoSize(id: string, checks: HealthCheck[] = []): RawNode {
 
 function makeEdge(
   id: string,
-  sources: string[],
+  source: string,
   target: string,
   checks: HealthCheck[] = []
 ): RawEdge {
-  return { id, label: id, sources, target, health: { checks }, meta: {} };
+  return { id, label: id, source, target, health: { checks }, meta: {} };
 }
 
 function makeGraph(partial: Partial<RawGraph>): RawGraph {
@@ -125,7 +125,7 @@ describe("propagate — single upstream failing", () => {
     // A (failing) → B (healthy)
     const graph = makeGraph({
       nodes: [makeNode("a", [fCheck()], "A"), makeNode("b", [hCheck()], "B")],
-      edges: [makeEdge("e1", ["a"], "b", [hCheck()])],
+      edges: [makeEdge("e1", "a", "b", [hCheck()])],
     });
     const resolved = propagate(graph);
     const b = resolved.nodes.find((n) => n.id === "b")!;
@@ -142,8 +142,8 @@ describe("propagate — single upstream failing", () => {
         makeNode("c", [hCheck()], "C"),
       ],
       edges: [
-        makeEdge("e1", ["a"], "b", [hCheck()]),
-        makeEdge("e2", ["b"], "c", [hCheck()]),
+        makeEdge("e1", "a", "b", [hCheck()]),
+        makeEdge("e2", "b", "c", [hCheck()]),
       ],
     });
     const resolved = propagate(graph);
@@ -161,7 +161,7 @@ describe("propagate — unknown node does not degrade neighbors", () => {
     // A (unknown) → B (healthy)
     const graph = makeGraph({
       nodes: [makeNode("a", [], "A"), makeNode("b", [hCheck()], "B")],
-      edges: [makeEdge("e1", ["a"], "b", [hCheck()])],
+      edges: [makeEdge("e1", "a", "b", [hCheck()])],
     });
     const resolved = propagate(graph);
     const b = resolved.nodes.find((n) => n.id === "b")!;
@@ -179,7 +179,7 @@ describe("propagate — maxDepth", () => {
       makeNode(`n${i}`, i === 0 ? [fCheck()] : [hCheck()])
     );
     const edges = Array.from({ length: 5 }, (_, i) =>
-      makeEdge(`e${i}`, [`n${i}`], `n${i + 1}`, [hCheck()])
+      makeEdge(`e${i}`, `n${i}`, `n${i + 1}`, [hCheck()])
     );
     const graph = makeGraph({
       config: { ...baseConfig, propagation: { decayFactor: 0.9, maxDepth: 2 } },
@@ -197,18 +197,42 @@ describe("propagate — maxDepth", () => {
 // ── Fan-in edges ──────────────────────────────────────────────────────────────
 
 describe("propagate — fan-in edges", () => {
-  it("node with fan-in takes worst upstream influence", () => {
-    // A (failing) and B (healthy) both write to C
+  it("node with fan-in takes worst upstream influence across multiple edges", () => {
+    // A (failing) → C and B (healthy) → C — two edges sharing target C
     const graph = makeGraph({
       nodes: [
         makeNode("a", [fCheck()], "A"),
         makeNode("b", [hCheck()], "B"),
         makeNode("c", [hCheck()], "C"),
       ],
-      edges: [makeEdge("e1", ["a", "b"], "c", [hCheck()])],
+      edges: [
+        makeEdge("e1", "a", "c", [hCheck()]),
+        makeEdge("e2", "b", "c", [hCheck()]),
+      ],
     });
     const resolved = propagate(graph);
     const c = resolved.nodes.find((n) => n.id === "c")!;
+    expect(c.visualStatus).toBe("degraded");
+    expect(c.visualReason).toContain("A");
+  });
+
+  it("fan-in picks the worst arriving influence when multiple upstreams fail", () => {
+    // A (failing) and B (failing) both → C. C should be at the full failing influence.
+    // Confirms that "worst across edges" works correctly under the single-source model.
+    const graph = makeGraph({
+      nodes: [
+        makeNode("a", [fCheck()], "A"),
+        makeNode("b", [fCheck()], "B"),
+        makeNode("c", [hCheck()], "C"),
+      ],
+      edges: [
+        makeEdge("e1", "a", "c", [hCheck()]),
+        makeEdge("e2", "b", "c", [hCheck()]),
+      ],
+    });
+    const resolved = propagate(graph);
+    const c = resolved.nodes.find((n) => n.id === "c")!;
+    expect(c.finalScore).toBeCloseTo(0.5); // 1.0 * decayFactor^1
     expect(c.visualStatus).toBe("degraded");
   });
 });
@@ -253,7 +277,7 @@ describe("propagate — edge visualStatus", () => {
   it("edge inherits failing status when source node is failing", () => {
     const graph = makeGraph({
       nodes: [makeNode("a", [fCheck()], "A"), makeNode("b", [hCheck()], "B")],
-      edges: [makeEdge("e1", ["a"], "b")], // no edge checks → unknown own status, but source pushes it
+      edges: [makeEdge("e1", "a", "b")], // no edge checks → unknown own status, but source pushes it
     });
     const resolved = propagate(graph);
     const edge = resolved.edges.find((e) => e.id === "e1")!;
@@ -263,7 +287,7 @@ describe("propagate — edge visualStatus", () => {
   it("edge with own failing checks shows failing", () => {
     const graph = makeGraph({
       nodes: [makeNode("a", [hCheck()], "A"), makeNode("b", [hCheck()], "B")],
-      edges: [makeEdge("e1", ["a"], "b", [fCheck()])],
+      edges: [makeEdge("e1", "a", "b", [fCheck()])],
     });
     const resolved = propagate(graph);
     const edge = resolved.edges.find((e) => e.id === "e1")!;
@@ -274,7 +298,7 @@ describe("propagate — edge visualStatus", () => {
   it("edge with no checks and healthy source → reportedStatus=unknown, visualStatus=healthy", () => {
     const graph = makeGraph({
       nodes: [makeNode("a", [hCheck()], "A"), makeNode("b", [hCheck()], "B")],
-      edges: [makeEdge("e1", ["a"], "b")], // no checks
+      edges: [makeEdge("e1", "a", "b")], // no checks
     });
     const resolved = propagate(graph);
     const edge = resolved.edges.find((e) => e.id === "e1")!;
@@ -308,7 +332,7 @@ describe("propagate — finalScore continuous model", () => {
   it("healthy node 1 hop from failing → finalScore=0.50", () => {
     const graph = makeGraph({
       nodes: [makeNode("a", [fCheck()], "A"), makeNode("b", [hCheck()], "B")],
-      edges: [makeEdge("e1", ["a"], "b", [hCheck()])],
+      edges: [makeEdge("e1", "a", "b", [hCheck()])],
     });
     const b = propagate(graph).nodes.find((n) => n.id === "b")!;
     expect(b.finalScore).toBeCloseTo(0.5);
@@ -323,8 +347,8 @@ describe("propagate — finalScore continuous model", () => {
         makeNode("c", [hCheck()], "C"),
       ],
       edges: [
-        makeEdge("e1", ["a"], "b", [hCheck()]),
-        makeEdge("e2", ["b"], "c", [hCheck()]),
+        makeEdge("e1", "a", "b", [hCheck()]),
+        makeEdge("e2", "b", "c", [hCheck()]),
       ],
     });
     const c = propagate(graph).nodes.find((n) => n.id === "c")!;
@@ -336,7 +360,7 @@ describe("propagate — finalScore continuous model", () => {
     // A (unknown) → B (failing): unknown carries score 0, so upstream=0, B stays at 1.0
     const graph = makeGraph({
       nodes: [makeNode("a", [], "A"), makeNode("b", [fCheck()], "B")],
-      edges: [makeEdge("e1", ["a"], "b", [hCheck()])],
+      edges: [makeEdge("e1", "a", "b", [hCheck()])],
     });
     const b = propagate(graph).nodes.find((n) => n.id === "b")!;
     expect(b.finalScore).toBeCloseTo(1.0);
@@ -361,7 +385,7 @@ describe("propagate — inferSize from downstream node count", () => {
     // a → b
     const graph = makeGraph({
       nodes: [makeNodeNoSize("a"), makeNodeNoSize("b")],
-      edges: [makeEdge("e1", ["a"], "b")],
+      edges: [makeEdge("e1", "a", "b")],
     });
     expect(sizeOf(graph, "a")).toBe(2);
   });
@@ -370,7 +394,7 @@ describe("propagate — inferSize from downstream node count", () => {
     // a → b → c
     const graph = makeGraph({
       nodes: [makeNodeNoSize("a"), makeNodeNoSize("b"), makeNodeNoSize("c")],
-      edges: [makeEdge("e1", ["a"], "b"), makeEdge("e2", ["b"], "c")],
+      edges: [makeEdge("e1", "a", "b"), makeEdge("e2", "b", "c")],
     });
     expect(sizeOf(graph, "a")).toBe(2);
   });
@@ -381,9 +405,9 @@ describe("propagate — inferSize from downstream node count", () => {
     const graph = makeGraph({
       nodes: ids.map((id) => makeNodeNoSize(id)),
       edges: [
-        makeEdge("e1", ["a"], "b"),
-        makeEdge("e2", ["b"], "c"),
-        makeEdge("e3", ["c"], "d"),
+        makeEdge("e1", "a", "b"),
+        makeEdge("e2", "b", "c"),
+        makeEdge("e3", "c", "d"),
       ],
     });
     expect(sizeOf(graph, "a")).toBe(3);
@@ -394,7 +418,7 @@ describe("propagate — inferSize from downstream node count", () => {
     const ids = ["a", "b", "c", "d", "e", "f"];
     const graph = makeGraph({
       nodes: ids.map((id) => makeNodeNoSize(id)),
-      edges: ids.slice(0, -1).map((src, i) => makeEdge(`e${i}`, [src], ids[i + 1])),
+      edges: ids.slice(0, -1).map((src, i) => makeEdge(`e${i}`, src, ids[i + 1])),
     });
     expect(sizeOf(graph, "a")).toBe(3);
   });
@@ -404,7 +428,7 @@ describe("propagate — inferSize from downstream node count", () => {
     const ids = Array.from({ length: 7 }, (_, i) => `n${i}`);
     const graph = makeGraph({
       nodes: ids.map((id) => makeNodeNoSize(id)),
-      edges: ids.slice(0, -1).map((src, i) => makeEdge(`e${i}`, [src], ids[i + 1])),
+      edges: ids.slice(0, -1).map((src, i) => makeEdge(`e${i}`, src, ids[i + 1])),
     });
     expect(sizeOf(graph, "n0")).toBe(4);
   });
@@ -414,7 +438,7 @@ describe("propagate — inferSize from downstream node count", () => {
     const ids = Array.from({ length: 11 }, (_, i) => `n${i}`);
     const graph = makeGraph({
       nodes: ids.map((id) => makeNodeNoSize(id)),
-      edges: ids.slice(0, -1).map((src, i) => makeEdge(`e${i}`, [src], ids[i + 1])),
+      edges: ids.slice(0, -1).map((src, i) => makeEdge(`e${i}`, src, ids[i + 1])),
     });
     expect(sizeOf(graph, "n0")).toBe(4);
   });
@@ -424,7 +448,7 @@ describe("propagate — inferSize from downstream node count", () => {
     const ids = Array.from({ length: 12 }, (_, i) => `n${i}`);
     const graph = makeGraph({
       nodes: ids.map((id) => makeNodeNoSize(id)),
-      edges: ids.slice(0, -1).map((src, i) => makeEdge(`e${i}`, [src], ids[i + 1])),
+      edges: ids.slice(0, -1).map((src, i) => makeEdge(`e${i}`, src, ids[i + 1])),
     });
     expect(sizeOf(graph, "n0")).toBe(5);
   });
@@ -434,10 +458,10 @@ describe("propagate — inferSize from downstream node count", () => {
     const graph = makeGraph({
       nodes: ["a", "b", "c", "d"].map((id) => makeNodeNoSize(id)),
       edges: [
-        makeEdge("e1", ["a"], "b"),
-        makeEdge("e2", ["a"], "c"),
-        makeEdge("e3", ["b"], "d"),
-        makeEdge("e4", ["c"], "d"),
+        makeEdge("e1", "a", "b"),
+        makeEdge("e2", "a", "c"),
+        makeEdge("e3", "b", "d"),
+        makeEdge("e4", "c", "d"),
       ],
     });
     expect(sizeOf(graph, "a")).toBe(3); // inferSize(3) = 3
@@ -447,7 +471,7 @@ describe("propagate — inferSize from downstream node count", () => {
     // Pipelines should be DAGs, but the walker must not hang if they aren't.
     const graph = makeGraph({
       nodes: [makeNodeNoSize("a"), makeNodeNoSize("b")],
-      edges: [makeEdge("e1", ["a"], "b"), makeEdge("e2", ["b"], "a")],
+      edges: [makeEdge("e1", "a", "b"), makeEdge("e2", "b", "a")],
     });
     const a = propagate(graph).nodes.find((n) => n.id === "a")!;
     expect(a.size).toBeGreaterThanOrEqual(1);
@@ -466,7 +490,7 @@ describe("propagate — inferSize from downstream node count", () => {
     });
     const graph = makeGraph({
       nodes,
-      edges: ids.slice(0, -1).map((src, i) => makeEdge(`e${i}`, [src], ids[i + 1])),
+      edges: ids.slice(0, -1).map((src, i) => makeEdge(`e${i}`, src, ids[i + 1])),
     });
     expect(sizeOf(graph, "a")).toBe(99);
   });
@@ -478,7 +502,7 @@ describe("propagate — reported vs visual", () => {
   it("degraded is output-only: healthy node downstream of failing derives visualStatus 'degraded'", () => {
     const graph = makeGraph({
       nodes: [makeNode("a", [fCheck()], "A"), makeNode("b", [hCheck()], "B")],
-      edges: [makeEdge("e1", ["a"], "b", [hCheck()])],
+      edges: [makeEdge("e1", "a", "b", [hCheck()])],
     });
     const resolved = propagate(graph);
     const b = resolved.nodes.find((n) => n.id === "b")!;
@@ -489,7 +513,7 @@ describe("propagate — reported vs visual", () => {
   it("keeps reportedStatus unchanged when upstream bumps visualStatus", () => {
     const graph = makeGraph({
       nodes: [makeNode("a", [fCheck()], "A"), makeNode("b", [hCheck()], "B")],
-      edges: [makeEdge("e1", ["a"], "b", [hCheck()])],
+      edges: [makeEdge("e1", "a", "b", [hCheck()])],
     });
     const resolved = propagate(graph);
     const b = resolved.nodes.find((n) => n.id === "b")!;
