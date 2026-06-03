@@ -90,7 +90,7 @@ export function buildGraphData(graph: ResolvedGraph): GraphData {
       id: node.id,
       label: node.label,
       color: nodeColor(node),
-      nodeSize: (node.size ?? 1) * 8,
+      nodeSize: node.size * 8,
       isSatellite: false,
       sourceNode: node,
     });
@@ -101,7 +101,7 @@ export function buildGraphData(graph: ResolvedGraph): GraphData {
         id: `${node.id}__sat__${idx}`,
         label: check.name,
         color: check.status === "unknown" ? UNKNOWN_COLOR : scoreToColor(statusToScore(check.status)),
-        nodeSize: Math.max(BASE_SATELLITE_SIZE, (node.size ?? 1) * 3),
+        nodeSize: Math.max(BASE_SATELLITE_SIZE, node.size * 3),
         isSatellite: true,
         parentId: node.id,
         checkName: check.name,

@@ -429,6 +429,31 @@ describe("propagate — inferSize from downstream node count", () => {
     expect(sizeOf(graph, "n0")).toBe(5);
   });
 
+  it("diamond topology counts unique descendants, not paths (a→b, a→c, b→d, c→d)", () => {
+    // From `a`, descendants are {b, c, d} — 3 unique, even though d is reachable via two paths
+    const graph = makeGraph({
+      nodes: ["a", "b", "c", "d"].map((id) => makeNodeNoSize(id)),
+      edges: [
+        makeEdge("e1", ["a"], "b"),
+        makeEdge("e2", ["a"], "c"),
+        makeEdge("e3", ["b"], "d"),
+        makeEdge("e4", ["c"], "d"),
+      ],
+    });
+    expect(sizeOf(graph, "a")).toBe(3); // inferSize(3) = 3
+  });
+
+  it("terminates on cycles without infinite recursion (a→b→a)", () => {
+    // Pipelines should be DAGs, but the walker must not hang if they aren't.
+    const graph = makeGraph({
+      nodes: [makeNodeNoSize("a"), makeNodeNoSize("b")],
+      edges: [makeEdge("e1", ["a"], "b"), makeEdge("e2", ["b"], "a")],
+    });
+    const a = propagate(graph).nodes.find((n) => n.id === "a")!;
+    expect(a.size).toBeGreaterThanOrEqual(1);
+    expect(a.size).toBeLessThanOrEqual(5);
+  });
+
   it("explicit size overrides inference, regardless of downstream count", () => {
     // a → b → c → d → e → f → g (a would normally be size 4 for 6 downstream)
     const ids = ["a", "b", "c", "d", "e", "f", "g"];

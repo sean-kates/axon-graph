@@ -55,6 +55,7 @@ export interface RawGraph {
 }
 
 export interface ResolvedNode extends RawNode {
+  size: number;
   reportedStatus: ReportedStatus;
   visualStatus: VisualStatus;
   visualReason: string | null;
