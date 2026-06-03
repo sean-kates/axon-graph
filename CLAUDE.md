@@ -87,6 +87,8 @@ demo/
 
 **`RawEdge` has no `type` field and `EdgeHealth` has no `lastRun`/`nextExpected` fields.** Edge health is fully derived from `checks[]` — cadence failures are expressed as a `HealthCheck` with `status: "failing"`. There is no edge type label; nothing in the renderer branches on edge identity beyond `visualStatus`.
 
+**`size` is optional on `RawNode` as of 0.5.1.** If omitted, size is inferred from total downstream node count using stepped buckets: 0→1, 1-2→2, 3-5→3, 6-10→4, 11+→5. Manual override is respected if provided. Downstream count is computed via recursive traversal in `propagate.ts` after the health propagation pass, and the result is written onto `ResolvedNode.size` so renderers see a concrete number regardless of input.
+
 **Pulse animation:** Traveling dots move source→target on each edge via `drawPulse` in `drawing.ts`. `globalTime = performance.now()` is captured in `onRenderFramePre` and passed to `drawLink` as its third argument. Each link has a `phase: Math.random()` offset assigned in `graphAdapters.ts` to stagger pulses organically. Failing edges fade out mid-transit (~60% of the way) and never arrive. Each edge carries one traveling dot (`offsets = [0]`). Tether links skip pulse entirely (early return in `drawLink`). `PULSE_SPEED` is a module-level constant in `drawing.ts` — tweak for feel.
 
 ## Known friction points

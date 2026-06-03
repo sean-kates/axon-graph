@@ -1,5 +1,6 @@
 import type {
   RawGraph,
+  RawEdge,
   ResolvedGraph,
   ResolvedNode,
   ResolvedEdge,
@@ -40,6 +41,33 @@ function finalScoreToVisualStatus(score: number): VisualStatus {
   if (score >= 0.4) return "degraded";
   if (score >= 0.1) return "at_risk";
   return "healthy";
+}
+
+function computeDownstreamCount(
+  nodeId: string,
+  edges: RawEdge[],
+  visited: Set<string> = new Set()
+): number {
+  const directTargets = edges
+    .filter((e) => e.sources.includes(nodeId))
+    .map((e) => e.target);
+
+  for (const target of directTargets) {
+    if (!visited.has(target)) {
+      visited.add(target);
+      computeDownstreamCount(target, edges, visited);
+    }
+  }
+
+  return visited.size;
+}
+
+function inferSize(downstreamCount: number): number {
+  if (downstreamCount === 0) return 1;
+  if (downstreamCount <= 2) return 2;
+  if (downstreamCount <= 5) return 3;
+  if (downstreamCount <= 10) return 4;
+  return 5;
 }
 
 export function deriveReportedStatus(checks: HealthCheck[]): ReportedStatus {
@@ -125,7 +153,12 @@ export function propagate(graph: RawGraph): ResolvedGraph {
         ? `Upstream signal from ${influence.from}`
         : null;
 
-    return { ...node, reportedStatus, visualStatus, visualReason, finalScore, influenceScore };
+    const size =
+      node.size !== undefined
+        ? node.size
+        : inferSize(computeDownstreamCount(node.id, graph.edges));
+
+    return { ...node, size, reportedStatus, visualStatus, visualReason, finalScore, influenceScore };
   });
 
   const resolvedNodeMap = new Map(resolvedNodes.map((n) => [n.id, n]));

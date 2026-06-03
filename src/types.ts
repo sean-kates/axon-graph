@@ -34,7 +34,7 @@ export interface RawNode {
   id: string;
   label: string;
   shape: NodeShape;
-  size: number;
+  size?: number;
   health: NodeHealth;
   meta: Record<string, unknown>;
 }
