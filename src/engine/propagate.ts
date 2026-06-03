@@ -42,6 +42,32 @@ function finalScoreToVisualStatus(score: number): VisualStatus {
   return "healthy";
 }
 
+function collectDescendants(
+  nodeId: string,
+  targets: Map<string, string[]>,
+  visited: Set<string>
+): void {
+  for (const target of targets.get(nodeId) ?? []) {
+    if (visited.has(target)) continue;
+    visited.add(target);
+    collectDescendants(target, targets, visited);
+  }
+}
+
+function inferredSize(nodeId: string, targets: Map<string, string[]>): number {
+  const visited = new Set<string>();
+  collectDescendants(nodeId, targets, visited);
+  return inferSize(visited.size);
+}
+
+function inferSize(downstreamCount: number): number {
+  if (downstreamCount === 0) return 1;
+  if (downstreamCount <= 2) return 2;
+  if (downstreamCount <= 5) return 3;
+  if (downstreamCount <= 10) return 4;
+  return 5;
+}
+
 export function deriveReportedStatus(checks: HealthCheck[]): ReportedStatus {
   if (checks.length === 0) return "unknown";
   if (checks.some((c) => c.status === "failing")) return "failing";
@@ -57,16 +83,20 @@ export function propagate(graph: RawGraph): ResolvedGraph {
     graph.nodes.map((n) => [n.id, deriveReportedStatus(n.health.checks)])
   );
 
-  // Build adjacency: nodeId → outgoing edgeIds
+  // Build adjacency once: nodeId → outgoing edgeIds (for the weighted influence walk)
+  // and nodeId → outgoing target nodeIds (for the unweighted descendant walk).
   const outEdges = new Map<string, string[]>();
+  const outTargets = new Map<string, string[]>();
   const edgeMap = new Map(graph.edges.map((e) => [e.id, e]));
 
   for (const node of graph.nodes) {
     outEdges.set(node.id, []);
+    outTargets.set(node.id, []);
   }
   for (const edge of graph.edges) {
     for (const src of edge.sources) {
       outEdges.get(src)?.push(edge.id);
+      outTargets.get(src)?.push(edge.target);
     }
   }
 
@@ -125,7 +155,9 @@ export function propagate(graph: RawGraph): ResolvedGraph {
         ? `Upstream signal from ${influence.from}`
         : null;
 
-    return { ...node, reportedStatus, visualStatus, visualReason, finalScore, influenceScore };
+    const size = node.size !== undefined ? node.size : inferredSize(node.id, outTargets);
+
+    return { ...node, size, reportedStatus, visualStatus, visualReason, finalScore, influenceScore };
   });
 
   const resolvedNodeMap = new Map(resolvedNodes.map((n) => [n.id, n]));

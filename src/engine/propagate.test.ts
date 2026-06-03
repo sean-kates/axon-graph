@@ -30,6 +30,17 @@ function makeNode(id: string, checks: HealthCheck[], label?: string): RawNode {
   };
 }
 
+// Like makeNode, but lets `size` stay undefined so inference is exercised.
+function makeNodeNoSize(id: string, checks: HealthCheck[] = []): RawNode {
+  return {
+    id,
+    label: id.toUpperCase(),
+    shape: "hexagon",
+    health: { updatedAt: "", checks },
+    meta: {},
+  };
+}
+
 function makeEdge(
   id: string,
   sources: string[],
@@ -331,6 +342,133 @@ describe("propagate — finalScore continuous model", () => {
     expect(b.finalScore).toBeCloseTo(1.0);
     expect(b.visualStatus).toBe("failing");
     expect(b.visualReason).toBeNull();
+  });
+});
+
+// ── Inferred size from downstream count ──────────────────────────────────────
+
+describe("propagate — inferSize from downstream node count", () => {
+  function sizeOf(graph: RawGraph, id: string): number | undefined {
+    return propagate(graph).nodes.find((n) => n.id === id)!.size;
+  }
+
+  it("leaf node (0 downstream) → size 1", () => {
+    const graph = makeGraph({ nodes: [makeNodeNoSize("a")] });
+    expect(sizeOf(graph, "a")).toBe(1);
+  });
+
+  it("node with 1 downstream → size 2", () => {
+    // a → b
+    const graph = makeGraph({
+      nodes: [makeNodeNoSize("a"), makeNodeNoSize("b")],
+      edges: [makeEdge("e1", ["a"], "b")],
+    });
+    expect(sizeOf(graph, "a")).toBe(2);
+  });
+
+  it("node with 2 downstream → size 2", () => {
+    // a → b → c
+    const graph = makeGraph({
+      nodes: [makeNodeNoSize("a"), makeNodeNoSize("b"), makeNodeNoSize("c")],
+      edges: [makeEdge("e1", ["a"], "b"), makeEdge("e2", ["b"], "c")],
+    });
+    expect(sizeOf(graph, "a")).toBe(2);
+  });
+
+  it("node with 3 downstream → size 3", () => {
+    // a → b → c → d
+    const ids = ["a", "b", "c", "d"];
+    const graph = makeGraph({
+      nodes: ids.map((id) => makeNodeNoSize(id)),
+      edges: [
+        makeEdge("e1", ["a"], "b"),
+        makeEdge("e2", ["b"], "c"),
+        makeEdge("e3", ["c"], "d"),
+      ],
+    });
+    expect(sizeOf(graph, "a")).toBe(3);
+  });
+
+  it("node with 5 downstream → size 3", () => {
+    // a → b → c → d → e → f  (a has 5 downstream)
+    const ids = ["a", "b", "c", "d", "e", "f"];
+    const graph = makeGraph({
+      nodes: ids.map((id) => makeNodeNoSize(id)),
+      edges: ids.slice(0, -1).map((src, i) => makeEdge(`e${i}`, [src], ids[i + 1])),
+    });
+    expect(sizeOf(graph, "a")).toBe(3);
+  });
+
+  it("node with 6 downstream → size 4", () => {
+    // chain of 7 nodes — head has 6 downstream
+    const ids = Array.from({ length: 7 }, (_, i) => `n${i}`);
+    const graph = makeGraph({
+      nodes: ids.map((id) => makeNodeNoSize(id)),
+      edges: ids.slice(0, -1).map((src, i) => makeEdge(`e${i}`, [src], ids[i + 1])),
+    });
+    expect(sizeOf(graph, "n0")).toBe(4);
+  });
+
+  it("node with 10 downstream → size 4", () => {
+    // chain of 11 nodes — head has 10 downstream
+    const ids = Array.from({ length: 11 }, (_, i) => `n${i}`);
+    const graph = makeGraph({
+      nodes: ids.map((id) => makeNodeNoSize(id)),
+      edges: ids.slice(0, -1).map((src, i) => makeEdge(`e${i}`, [src], ids[i + 1])),
+    });
+    expect(sizeOf(graph, "n0")).toBe(4);
+  });
+
+  it("node with 11+ downstream → size 5", () => {
+    // chain of 12 nodes — head has 11 downstream
+    const ids = Array.from({ length: 12 }, (_, i) => `n${i}`);
+    const graph = makeGraph({
+      nodes: ids.map((id) => makeNodeNoSize(id)),
+      edges: ids.slice(0, -1).map((src, i) => makeEdge(`e${i}`, [src], ids[i + 1])),
+    });
+    expect(sizeOf(graph, "n0")).toBe(5);
+  });
+
+  it("diamond topology counts unique descendants, not paths (a→b, a→c, b→d, c→d)", () => {
+    // From `a`, descendants are {b, c, d} — 3 unique, even though d is reachable via two paths
+    const graph = makeGraph({
+      nodes: ["a", "b", "c", "d"].map((id) => makeNodeNoSize(id)),
+      edges: [
+        makeEdge("e1", ["a"], "b"),
+        makeEdge("e2", ["a"], "c"),
+        makeEdge("e3", ["b"], "d"),
+        makeEdge("e4", ["c"], "d"),
+      ],
+    });
+    expect(sizeOf(graph, "a")).toBe(3); // inferSize(3) = 3
+  });
+
+  it("terminates on cycles without infinite recursion (a→b→a)", () => {
+    // Pipelines should be DAGs, but the walker must not hang if they aren't.
+    const graph = makeGraph({
+      nodes: [makeNodeNoSize("a"), makeNodeNoSize("b")],
+      edges: [makeEdge("e1", ["a"], "b"), makeEdge("e2", ["b"], "a")],
+    });
+    const a = propagate(graph).nodes.find((n) => n.id === "a")!;
+    expect(a.size).toBeGreaterThanOrEqual(1);
+    expect(a.size).toBeLessThanOrEqual(5);
+  });
+
+  it("explicit size overrides inference, regardless of downstream count", () => {
+    // a → b → c → d → e → f → g (a would normally be size 4 for 6 downstream)
+    const ids = ["a", "b", "c", "d", "e", "f", "g"];
+    const nodes = ids.map((id, i) => {
+      if (i === 0) {
+        // explicit size on `a` — should be respected
+        return { ...makeNodeNoSize(id), size: 99 } as RawNode;
+      }
+      return makeNodeNoSize(id);
+    });
+    const graph = makeGraph({
+      nodes,
+      edges: ids.slice(0, -1).map((src, i) => makeEdge(`e${i}`, [src], ids[i + 1])),
+    });
+    expect(sizeOf(graph, "a")).toBe(99);
   });
 });
 
