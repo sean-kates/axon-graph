@@ -36,7 +36,7 @@ src/
   d3-force-3d.d.ts                # TypeScript declarations for d3-force-3d
   engine/
     propagate.ts                  # Pure propagation logic (no rendering)
-    propagate.test.ts             # 28 vitest tests — run these before touching engine
+    propagate.test.ts             # 44 vitest tests — run these before touching engine
     index.ts                      # Re-exports propagate
   components/AxonGraph/
     drawing.ts                    # drawNode / drawLink — shared by vanilla API + viewer
@@ -58,7 +58,7 @@ demo/
 
 **Engine and renderer are strictly separated.** `src/engine/` has zero rendering imports. The propagation engine is the core value of the package — don't mix concerns.
 
-**`ReportedStatus` and `VisualStatus` are distinct types.** `ReportedStatus` (`healthy | failing | unknown`) appears in `HealthCheck.status` — it is what the backend writes per-check. There is no top-level status field; the engine derives the node/edge reported status from its checks. `VisualStatus` (`healthy | at_risk | degraded | failing`) is what the propagation engine derives for rendering. `degraded` is never written to the database or sent by the backend — it is always derived by the propagation engine from upstream failing nodes. This is a hard invariant.
+**`ReportedStatus` and `VisualStatus` are distinct types.** `ReportedStatus` (`healthy | failing | unknown`) appears in `HealthCheck.status` — it is what the backend writes per-check. There is no top-level status field; the engine derives the node/edge reported status from its checks. `VisualStatus` (`healthy | at_risk | degraded | failing | unknown`) is what the propagation engine derives for rendering. `degraded` and `at_risk` are never written to the database or sent by the backend — they are always derived by the propagation engine from upstream failing nodes. `unknown` appears in both unions but `visualStatus="unknown"` is set by the engine only when `reportedStatus="unknown"` AND no upstream influence has reached the entity; the renderer (and info panel) reads `visualStatus` directly — there are no rendering-side special cases that look at `reportedStatus`. This is a hard invariant.
 
 **`reportedStatus` is derived from checks, never from a stored field.** `NodeHealth` and `EdgeHealth` have no `status` field. The propagation engine calls `deriveReportedStatus(checks)` — no checks → `unknown`, any failing check → `failing`, any unknown check (no failing) → `unknown`, all healthy → `healthy`. The derived value is stored as `ResolvedNode.reportedStatus` and `ResolvedEdge.reportedStatus`. It is never mutated after derivation. `visualStatus` is what the graph shows. `visualReason` explains the difference. The info panel always shows both.
 
@@ -77,7 +77,7 @@ demo/
 
 **Status is derived from checks, not stored.** `NodeHealth` and `EdgeHealth` have no `status` field. The backend only writes `checks[]`. `deriveReportedStatus(checks)` in the engine computes status at runtime using "any-failing" semantics: if any check is failing the node is failing; if any check is unknown (with no failing) the node is unknown; if all checks are healthy the node is healthy; no checks → unknown. This removes an entire class of bugs where the stored status could disagree with the checks that produced it.
 
-**Unknown renders gray and carries zero propagation weight.** `unknown` means "no signal" — the node is unmeasured, not unhealthy. Rendering: gray (`rgb(100,100,110)`), outside the green→red gradient. A node renders gray only when `reportedStatus === "unknown" AND influenceScore === 0`. If upstream influence has pushed the node's `visualStatus` above `healthy`, the gradient color takes over (color and panel stay consistent). An unknown node's score is 0, so it never degrades downstream neighbors — do not change `REPORTED_SCORES.unknown` without considering this invariant.
+**Unknown renders gray and carries zero propagation weight.** `unknown` means "no signal" — the node is unmeasured, not unhealthy. Rendering: gray (`rgb(100,100,110)`), outside the green→red gradient. A node/edge renders gray when `visualStatus === "unknown"`, which the engine sets only when `reportedStatus === "unknown"` AND no upstream influence has reached the entity. If upstream influence has pushed the entity above `healthy`, `visualStatus` is the derived gradient status (color and panel stay consistent). An unknown node's score is 0, so it never degrades downstream neighbors — do not change `REPORTED_SCORES.unknown` without considering this invariant. `visualToEdgeStatus` normalizes both `at_risk` and `unknown` to `healthy` when comparing source-node influence on an edge — neither contributes signal to a downstream edge.
 
 **Edges use single `source` and `target` as of 0.6.0** (was `sources: string[]`). An edge is one directed connection — the universal graph edge primitive. Fan-in and fan-out emerge from multiple edges sharing a target or source, not from arrays inside a single edge. This is a breaking change from 0.5.x. The propagation engine's "worst arriving influence at a node" logic operates across edges sharing a target, not within an edge's source list.
 

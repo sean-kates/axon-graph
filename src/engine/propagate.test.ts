@@ -101,20 +101,22 @@ describe("propagate — isolated nodes", () => {
     expect(resolved.nodes[0].visualStatus).toBe("failing");
   });
 
-  it("unknown node (no checks) → reportedStatus=unknown, visualStatus=healthy, finalScore=0", () => {
+  it("unknown node (no checks) → reportedStatus=unknown, visualStatus=unknown, finalScore=0", () => {
     const graph = makeGraph({ nodes: [makeNode("a", [])] });
     const resolved = propagate(graph);
     expect(resolved.nodes[0].reportedStatus).toBe("unknown");
-    // unknown carries zero weight — visualStatus stays healthy (no upstream pushing it)
-    expect(resolved.nodes[0].visualStatus).toBe("healthy");
+    // No checks AND no upstream influence — surfaces as unknown so the renderer
+    // and panel can show gray directly from the data.
+    expect(resolved.nodes[0].visualStatus).toBe("unknown");
     expect(resolved.nodes[0].finalScore).toBeCloseTo(0);
+    expect(resolved.nodes[0].visualReason).toBeNull();
   });
 
   it("unknown node (unknown check) → same as no checks", () => {
     const graph = makeGraph({ nodes: [makeNode("a", [uCheck()])] });
     const resolved = propagate(graph);
     expect(resolved.nodes[0].reportedStatus).toBe("unknown");
-    expect(resolved.nodes[0].visualStatus).toBe("healthy");
+    expect(resolved.nodes[0].visualStatus).toBe("unknown");
   });
 });
 
@@ -167,6 +169,38 @@ describe("propagate — unknown node does not degrade neighbors", () => {
     const b = resolved.nodes.find((n) => n.id === "b")!;
     expect(b.visualStatus).toBe("healthy");
     expect(b.finalScore).toBeCloseTo(0);
+  });
+});
+
+// ── Unknown nodes pick up upstream signal ─────────────────────────────────────
+
+describe("propagate — unknown node downstream of failing source", () => {
+  it("unknown node 1 hop from failing → visualStatus=degraded (upstream overrides unknown)", () => {
+    // A (failing) → B (unknown — no checks). B should reflect upstream, not stay gray.
+    const graph = makeGraph({
+      nodes: [makeNode("a", [fCheck()], "A"), makeNode("b", [], "B")],
+      edges: [makeEdge("e1", "a", "b", [hCheck()])],
+    });
+    const resolved = propagate(graph);
+    const b = resolved.nodes.find((n) => n.id === "b")!;
+    expect(b.reportedStatus).toBe("unknown");
+    expect(b.visualStatus).toBe("degraded"); // finalScore=0.5 → degraded
+    expect(b.finalScore).toBeCloseTo(0.5);
+    expect(b.visualReason).toContain("A");
+  });
+
+  it("unknown node directly fed by failing at decayFactor=1.0 → visualStatus=failing", () => {
+    // No decay: upstream failing arrives at full strength
+    const graph = makeGraph({
+      config: { ...baseConfig, propagation: { decayFactor: 1.0, maxDepth: 5 } },
+      nodes: [makeNode("a", [fCheck()], "A"), makeNode("b", [], "B")],
+      edges: [makeEdge("e1", "a", "b", [hCheck()])],
+    });
+    const resolved = propagate(graph);
+    const b = resolved.nodes.find((n) => n.id === "b")!;
+    expect(b.reportedStatus).toBe("unknown");
+    expect(b.visualStatus).toBe("failing");
+    expect(b.finalScore).toBeCloseTo(1.0);
   });
 });
 
@@ -257,7 +291,7 @@ describe("propagate — derived status from checks", () => {
     });
     const resolved = propagate(graph);
     expect(resolved.nodes[0].reportedStatus).toBe("unknown");
-    expect(resolved.nodes[0].visualStatus).toBe("healthy");
+    expect(resolved.nodes[0].visualStatus).toBe("unknown");
     expect(resolved.nodes[0].finalScore).toBeCloseTo(0);
   });
 
@@ -295,7 +329,7 @@ describe("propagate — edge visualStatus", () => {
     expect(edge.visualStatus).toBe("failing");
   });
 
-  it("edge with no checks and healthy source → reportedStatus=unknown, visualStatus=healthy", () => {
+  it("edge with no checks and healthy source → reportedStatus=unknown, visualStatus=unknown", () => {
     const graph = makeGraph({
       nodes: [makeNode("a", [hCheck()], "A"), makeNode("b", [hCheck()], "B")],
       edges: [makeEdge("e1", "a", "b")], // no checks
@@ -303,7 +337,31 @@ describe("propagate — edge visualStatus", () => {
     const resolved = propagate(graph);
     const edge = resolved.edges.find((e) => e.id === "e1")!;
     expect(edge.reportedStatus).toBe("unknown");
-    expect(edge.visualStatus).toBe("healthy");
+    expect(edge.visualStatus).toBe("unknown");
+    expect(edge.visualReason).toBeNull();
+  });
+
+  it("edge with no checks and failing source → reportedStatus=unknown, visualStatus=failing (source overrides)", () => {
+    const graph = makeGraph({
+      nodes: [makeNode("a", [fCheck()], "A"), makeNode("b", [hCheck()], "B")],
+      edges: [makeEdge("e1", "a", "b")], // no checks
+    });
+    const resolved = propagate(graph);
+    const edge = resolved.edges.find((e) => e.id === "e1")!;
+    expect(edge.reportedStatus).toBe("unknown");
+    expect(edge.visualStatus).toBe("failing");
+    expect(edge.visualReason).toContain("A");
+  });
+
+  it("edge with no checks and unknown source → reportedStatus=unknown, visualStatus=unknown", () => {
+    const graph = makeGraph({
+      nodes: [makeNode("a", [], "A"), makeNode("b", [hCheck()], "B")],
+      edges: [makeEdge("e1", "a", "b")], // no checks, source has no checks
+    });
+    const resolved = propagate(graph);
+    const edge = resolved.edges.find((e) => e.id === "e1")!;
+    expect(edge.reportedStatus).toBe("unknown");
+    expect(edge.visualStatus).toBe("unknown");
   });
 });
 
@@ -316,11 +374,11 @@ describe("propagate — finalScore continuous model", () => {
     expect(n.visualStatus).toBe("healthy");
   });
 
-  it("unknown node, no upstream → finalScore=0.00, visualStatus=healthy, reportedStatus=unknown", () => {
+  it("unknown node, no upstream → finalScore=0.00, visualStatus=unknown, reportedStatus=unknown", () => {
     const n = propagate(makeGraph({ nodes: [makeNode("a", [])] })).nodes[0];
     expect(n.finalScore).toBeCloseTo(0.0);
     expect(n.reportedStatus).toBe("unknown");
-    expect(n.visualStatus).toBe("healthy");
+    expect(n.visualStatus).toBe("unknown");
   });
 
   it("failing node → finalScore=1.00", () => {

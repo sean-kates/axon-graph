@@ -15,6 +15,7 @@ const REPORTED_SCORES: Record<ReportedStatus, number> = {
 };
 
 const VISUAL_SEVERITY: Record<VisualStatus, number> = {
+  unknown: 0,
   healthy: 0,
   at_risk: 1,
   degraded: 2,
@@ -25,14 +26,16 @@ function worstVisualStatus(a: VisualStatus, b: VisualStatus): VisualStatus {
   return VISUAL_SEVERITY[a] >= VISUAL_SEVERITY[b] ? a : b;
 }
 
-// at_risk is info-panel only; treat it as healthy when propagating through edges
+// at_risk and unknown are not propagated through edges as signals.
+// at_risk is panel-only; unknown means "no signal" — neither degrades a downstream edge.
 function visualToEdgeStatus(vs: VisualStatus): VisualStatus {
-  return vs === "at_risk" ? "healthy" : vs;
+  return vs === "at_risk" || vs === "unknown" ? "healthy" : vs;
 }
 
-// unknown means "no signal" — not unhealthy, carries zero propagation weight
+// unknown means "no signal" — surfaces as visualStatus="unknown" so the renderer
+// and panel can show gray directly from the data.
 function reportedToVisual(s: ReportedStatus): VisualStatus {
-  return s === "unknown" ? "healthy" : s;
+  return s;
 }
 
 function finalScoreToVisualStatus(score: number): VisualStatus {
@@ -149,7 +152,7 @@ export function propagate(graph: RawGraph): ResolvedGraph {
         : reportedToVisual(reportedStatus);
 
     const visualReason =
-      (visualStatus as string) !== reportedStatus && influence
+      visualStatus !== reportedStatus && influence
         ? `Upstream signal from ${influence.from}`
         : null;
 

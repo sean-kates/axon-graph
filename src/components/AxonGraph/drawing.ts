@@ -62,7 +62,7 @@ export function drawNode(
 
   const r = node.nodeSize;
   const glowColor = node.sourceNode
-    ? (node.sourceNode.reportedStatus === "unknown" && node.sourceNode.influenceScore === 0
+    ? (node.sourceNode.visualStatus === "unknown"
         ? UNKNOWN_GLOW
         : scoreToGlow(node.sourceNode.finalScore))
     : "rgba(80,80,80,0.3)";
