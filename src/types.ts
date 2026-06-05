@@ -1,5 +1,5 @@
 export type ReportedStatus = "healthy" | "failing" | "unknown";
-export type VisualStatus = "healthy" | "at_risk" | "degraded" | "failing";
+export type VisualStatus = "healthy" | "at_risk" | "degraded" | "failing" | "unknown";
 export type NodeShape = "hexagon" | "circle" | "diamond" | "square";
 
 export interface HealthCheck {
