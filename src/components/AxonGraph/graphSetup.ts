@@ -1,6 +1,6 @@
 import ForceGraph from "force-graph";
 import { forceCollide } from "d3-force-3d";
-import { drawNode, drawLink } from "./drawing";
+import { drawNode, drawLink, COLLIDE_BASE_PADDING, COLLIDE_LABEL_SCALE } from "./drawing";
 import type { GraphNode, GraphLink, OrbitConfig } from "./graphAdapters";
 import type { ResolvedGraph, ResolvedNode, ResolvedEdge } from "../../types";
 
@@ -91,7 +91,7 @@ export function initForceGraph(
     .distance((link: GraphLink) => link.id.endsWith("__sat_link") ? 18 : 80)
     .strength((link: GraphLink) => link.id.endsWith("__sat_link") ? 0 : 1);
   graph.d3Force("collide", forceCollide((node: GraphNode) =>
-    node.isSatellite ? node.nodeSize / 2 + 2 : Math.max(node.nodeSize + 40, node.label.length * 4 + node.nodeSize)
+    node.isSatellite ? node.nodeSize / 2 + 2 : Math.max(node.nodeSize + COLLIDE_BASE_PADDING, node.label.length * COLLIDE_LABEL_SCALE + node.nodeSize * 2)
   ));
 
   return graph;

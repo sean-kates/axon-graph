@@ -2,6 +2,13 @@ import type { NodeShape } from "../../types";
 import type { GraphNode, GraphLink } from "./graphAdapters";
 import { scoreToGlow, UNKNOWN_GLOW } from "./healthColors";
 
+const LABEL_MIN_SCALE = 0.4;
+
+// Collide radius constants — tuned together with LABEL_MIN_SCALE.
+// The layout always reserves space for visible labels, even at low zoom.
+export const COLLIDE_BASE_PADDING = 60;
+export const COLLIDE_LABEL_SCALE = 6;
+
 const phaseCache = new Map<string, number>();
 
 function getPhase(id: string): number {
@@ -84,6 +91,8 @@ export function drawNode(
   ctx.strokeStyle = "rgba(255,255,255,0.15)";
   ctx.lineWidth = 1.5;
   ctx.stroke();
+
+  if (globalScale < LABEL_MIN_SCALE) return;
 
   // Keep label at a fixed screen size regardless of zoom level.
   const fontSize = Math.max(1, 11 / globalScale);
