@@ -27,7 +27,7 @@ export function initForceGraph(
     .height(height)
     .backgroundColor(BG_COLOR)
     .dagMode("td")
-    .dagLevelDistance(120)
+    .dagLevelDistance(Math.max(120, Math.round(height * 0.18)))
     .dagNodeFilter((node: object) => !(node as GraphNode).isSatellite)
     .cooldownTicks(Infinity)
     .cooldownTime(Infinity)
