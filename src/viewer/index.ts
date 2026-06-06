@@ -87,7 +87,7 @@ function initGraph(raw: Parameters<typeof propagate>[0]): void {
     getCurrentNodes: () => currentNodes,
     getOrbitConfig: () => orbitConfig,
     showPanel,
-  });
+  }, { dagMode: raw.config.dagMode });
   graph.graphData({ nodes, links });
 
   setTimeout(() => graph!.zoomToFit(400, 60), 800);

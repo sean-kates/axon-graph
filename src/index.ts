@@ -16,4 +16,5 @@ export type {
   NodeShape,
   GraphConfig,
   PropagationConfig,
+  DagMode,
 } from "./types";

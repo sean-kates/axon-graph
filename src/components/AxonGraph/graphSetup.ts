@@ -2,7 +2,7 @@ import ForceGraph from "force-graph";
 import { forceCollide } from "d3-force-3d";
 import { drawNode, drawLink, COLLIDE_BASE_PADDING, COLLIDE_LABEL_SCALE } from "./drawing";
 import type { GraphNode, GraphLink, OrbitConfig } from "./graphAdapters";
-import type { ResolvedGraph, ResolvedNode, ResolvedEdge } from "../../types";
+import type { ResolvedGraph, ResolvedNode, ResolvedEdge, DagMode } from "../../types";
 
 export interface GraphInit {
   tick: () => void;
@@ -14,19 +14,25 @@ export interface GraphInit {
   showPanel: (selected: ResolvedNode | ResolvedEdge) => void;
 }
 
+export interface ForceGraphOptions {
+  dagMode?: DagMode;
+}
+
 const BG_COLOR = "#070a10";
 
 export function initForceGraph(
   container: HTMLElement,
   width: number,
   height: number,
-  cb: GraphInit
+  cb: GraphInit,
+  options: ForceGraphOptions = {}
 ): any {
+  const dagMode = options.dagMode !== undefined ? options.dagMode : "td";
   const graph: any = new (ForceGraph as any)()(container)
     .width(width)
     .height(height)
     .backgroundColor(BG_COLOR)
-    .dagMode("td")
+    .dagMode(dagMode)
     .dagLevelDistance(Math.max(120, Math.round(height * 0.18)))
     .dagNodeFilter((node: object) => !(node as GraphNode).isSatellite)
     .cooldownTicks(Infinity)

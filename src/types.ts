@@ -23,11 +23,14 @@ export interface PropagationConfig {
   maxDepth: number;
 }
 
+export type DagMode = "td" | "bu" | "lr" | "rl" | "radial" | null;
+
 export interface GraphConfig {
   pollInterval: number;
   propagation: PropagationConfig;
   satelliteOrbit?: boolean;
   satelliteOrbitSpeed?: number;
+  dagMode?: DagMode;
 }
 
 export interface RawNode {
