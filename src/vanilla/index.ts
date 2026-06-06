@@ -6,13 +6,14 @@ import {
   type OrbitConfig,
 } from "../components/AxonGraph/graphAdapters";
 import { initForceGraph } from "../components/AxonGraph/graphSetup";
-import type { RawGraph, ResolvedGraph, ResolvedNode, ResolvedEdge } from "../types";
+import type { RawGraph, ResolvedGraph, ResolvedNode, ResolvedEdge, DagMode } from "../types";
 import { esc } from "../utils/esc";
 
 interface MountConfigBase {
   pollInterval?: number;
   width?: number;
   height?: number;
+  dagMode?: DagMode;
   onError?: (err: Error) => void;
 }
 
@@ -168,7 +169,7 @@ export function mountAxonGraph(
     getCurrentNodes: () => currentNodes,
     getOrbitConfig: () => orbitConfig,
     showPanel,
-  });
+  }, { dagMode: config.dagMode });
 
   function applyGraphData(raw: Parameters<typeof propagate>[0]): void {
     resolvedGraph = propagate(raw);

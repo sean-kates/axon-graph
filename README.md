@@ -43,6 +43,7 @@ Exactly one of `configUrl` or `getData` is required.
 | `pollInterval` | `number` | `30000` | Milliseconds between refreshes |
 | `width` | `number` | element width or `900` | Canvas width in px — pass explicitly if mounting before first paint |
 | `height` | `number` | element height or `600` | Canvas height in px — pass explicitly if mounting before first paint |
+| `dagMode` | `"td" \| "bu" \| "lr" \| "rl" \| "radial" \| null` | `"td"` | DAG layout direction — see [DAG modes](#dag-modes) |
 | `onError` | `(err: Error) => void` | — | Called on each fetch/getData failure; previous graph state is preserved |
 
 **Width/height note:** `clientWidth`/`clientHeight` are read at mount time. If the element has not been laid out yet (e.g. mounted in a hidden container), they will be zero and the canvas will default to 900×600 with a console warning. Pass explicit `width`/`height` to avoid this.
@@ -153,6 +154,7 @@ Fan-in (multiple upstream nodes → one target) is handled at the node level: wh
 {
   "config": {
     "pollInterval": 30000,
+    "dagMode": "td",        // optional — see DAG modes below; default "td"
     "propagation": {
       "decayFactor": 0.5,   // per-hop multiplier on influence score
       "maxDepth": 5         // max hops to propagate
@@ -218,6 +220,21 @@ Fan-in (multiple upstream nodes → one target) is handled at the node level: wh
 }
 ```
 
+### DAG modes
+
+The `dagMode` field (in `MountConfig` or `GraphConfig.dagMode` in JSON) controls how the DAG layout arranges nodes. The layout engine respects edges as directed links and stratifies nodes into layers accordingly.
+
+| Value | Layout | Best for |
+|---|---|---|
+| `"td"` | Top → bottom *(default)* | Classic pipeline DAGs — sources at top, sinks at bottom |
+| `"bu"` | Bottom → top | Same as `"td"` but sinks at top; useful when the "output" is visually most important |
+| `"lr"` | Left → right | Wide, shallow graphs or timelines read left-to-right |
+| `"rl"` | Right → left | Mirror of `"lr"`; less common |
+| `"radial"` | Radial from center | Hub-and-spoke topologies where one or few central nodes fan out |
+| `null` | Pure force-directed (no DAG) | Graphs with cycles, or where hierarchical layout is not meaningful |
+
+> **Note:** `"radial"` and `null` disable the strict layering constraint. `null` removes DAG mode entirely — useful when your graph has cycles that would otherwise cause force-graph to log a DAG cycle warning.
+
 ### Upgrading from 0.5 → 0.6
 
 Breaking change: `RawEdge.sources: string[]` is replaced by `RawEdge.source: string`. An edge is now a single directed connection from one source to one target — the universal graph edge primitive. Fan-in and fan-out emerge naturally from multiple edges that share a target or source.
@@ -246,7 +263,7 @@ If your old payloads used the `nodeTypes[type].label` field for grouping or labe
 
 ## Visual design
 
-- **Force-directed, DAG-aware** layout (top-down)
+- **Force-directed, DAG-aware** layout — direction configurable via `dagMode` (default `"td"`)
 - **Node color** = health-derived: green (healthy) → amber (degraded) → red (failing), driven by a continuous score-based gradient. **Unknown nodes render gray** — they are unmeasured, not unhealthy, and sit outside the gradient
 - **Satellites** = small orbiting dots, one per health check, always visible
 - **Edges**: thin solid lines; color driven by health; traveling pulse dots as the motion signal
@@ -266,6 +283,7 @@ import type {
   NodeHealth, EdgeHealth,
   NodeShape,
   GraphConfig, PropagationConfig,
+  DagMode,
   MountConfig, AxonGraphInstance,
 } from 'axon-graph';
 ```
