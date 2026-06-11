@@ -3,6 +3,7 @@ import {
   buildGraphData,
   buildOrbitConfigs,
   type GraphNode,
+  type GraphLink,
   type OrbitConfig,
 } from "../components/AxonGraph/graphAdapters";
 import { initForceGraph } from "../components/AxonGraph/graphSetup";
@@ -159,6 +160,7 @@ export function mountAxonGraph(
   let globalTime = 0;
   let resolvedGraph: ResolvedGraph | null = null;
   let currentNodes: GraphNode[] = [];
+  let currentLinks: GraphLink[] = [];
   let orbitConfig: Map<string, OrbitConfig> = new Map();
   let firstLoad = true;
 
@@ -168,6 +170,7 @@ export function mountAxonGraph(
     getGlobalTime: () => globalTime,
     getResolvedGraph: () => resolvedGraph,
     getCurrentNodes: () => currentNodes,
+    getCurrentLinks: () => currentLinks,
     getOrbitConfig: () => orbitConfig,
     showPanel,
   }, { dagMode: config.dagMode, dagLevelDistance: config.dagLevelDistance });
@@ -177,6 +180,7 @@ export function mountAxonGraph(
     const { nodes, links } = buildGraphData(resolvedGraph);
     orbitConfig = buildOrbitConfigs(nodes);
     currentNodes = nodes;
+    currentLinks = links;
     graph.graphData({ nodes, links });
     const delay = firstLoad ? 800 : 600;
     firstLoad = false;

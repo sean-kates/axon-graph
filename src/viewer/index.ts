@@ -1,5 +1,5 @@
 import { propagate } from "../engine";
-import { buildGraphData, buildOrbitConfigs, type GraphNode, type OrbitConfig } from "../components/AxonGraph/graphAdapters";
+import { buildGraphData, buildOrbitConfigs, type GraphNode, type GraphLink, type OrbitConfig } from "../components/AxonGraph/graphAdapters";
 import { initForceGraph } from "../components/AxonGraph/graphSetup";
 import type { ResolvedGraph, ResolvedNode, ResolvedEdge } from "../types";
 import { esc } from "../utils/esc";
@@ -64,6 +64,7 @@ let globalTime = 0;
 let resolvedGraph: ResolvedGraph | null = null;
 let graph: any = null;
 let currentNodes: GraphNode[] = [];
+let currentLinks: GraphLink[] = [];
 let orbitConfig: Map<string, OrbitConfig> = new Map();
 let rawConfig: any = null;
 
@@ -72,6 +73,7 @@ function initGraph(raw: Parameters<typeof propagate>[0]): void {
   const { nodes, links } = buildGraphData(resolvedGraph);
   orbitConfig = buildOrbitConfigs(nodes);
   currentNodes = nodes;
+  currentLinks = links;
 
   if (graph) {
     graph.graphData({ nodes, links });
@@ -85,6 +87,7 @@ function initGraph(raw: Parameters<typeof propagate>[0]): void {
     getGlobalTime: () => globalTime,
     getResolvedGraph: () => resolvedGraph,
     getCurrentNodes: () => currentNodes,
+    getCurrentLinks: () => currentLinks,
     getOrbitConfig: () => orbitConfig,
     showPanel,
   }, { dagMode: raw.config.dagMode });
