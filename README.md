@@ -44,6 +44,7 @@ Exactly one of `configUrl` or `getData` is required.
 | `width` | `number` | element width or `900` | Canvas width in px — pass explicitly if mounting before first paint |
 | `height` | `number` | element height or `600` | Canvas height in px — pass explicitly if mounting before first paint |
 | `dagMode` | `"td" \| "bu" \| "lr" \| "rl" \| "radial" \| null` | `"td"` | DAG layout direction — see [DAG modes](#dag-modes) |
+| `dagLevelDistance` | `number` | `max(120, height × 0.18)` | Pixel distance between DAG layers; overrides the default height-relative calculation |
 | `onError` | `(err: Error) => void` | — | Called on each fetch/getData failure; previous graph state is preserved |
 
 **Width/height note:** `clientWidth`/`clientHeight` are read at mount time. If the element has not been laid out yet (e.g. mounted in a hidden container), they will be zero and the canvas will default to 900×600 with a console warning. Pass explicit `width`/`height` to avoid this.

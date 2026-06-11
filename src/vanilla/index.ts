@@ -14,6 +14,7 @@ interface MountConfigBase {
   width?: number;
   height?: number;
   dagMode?: DagMode;
+  dagLevelDistance?: number;
   onError?: (err: Error) => void;
 }
 
@@ -169,7 +170,7 @@ export function mountAxonGraph(
     getCurrentNodes: () => currentNodes,
     getOrbitConfig: () => orbitConfig,
     showPanel,
-  }, { dagMode: config.dagMode });
+  }, { dagMode: config.dagMode, dagLevelDistance: config.dagLevelDistance });
 
   function applyGraphData(raw: Parameters<typeof propagate>[0]): void {
     resolvedGraph = propagate(raw);
