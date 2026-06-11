@@ -52,8 +52,11 @@ export function drawNode(
   node: GraphNode,
   ctx: CanvasRenderingContext2D,
   frameTime: number,
-  globalScale: number = 1
+  globalScale: number = 1,
+  faded: boolean = false
 ): void {
+  if (faded) { ctx.save(); ctx.globalAlpha = 0.15; }
+
   const t = frameTime + getPhase(node.id);
   const pulse = Math.sin(t) * 0.15 + 0.85;
   const x = node.x ?? 0;
@@ -64,6 +67,7 @@ export function drawNode(
     ctx.arc(x, y, node.nodeSize / 2, 0, 2 * Math.PI);
     ctx.fillStyle = node.color;
     ctx.fill();
+    if (faded) ctx.restore();
     return;
   }
 
@@ -92,15 +96,17 @@ export function drawNode(
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  if (globalScale < LABEL_MIN_SCALE) return;
+  if (globalScale >= LABEL_MIN_SCALE) {
+    // Keep label at a fixed screen size regardless of zoom level.
+    const fontSize = Math.max(1, 11 / globalScale);
+    ctx.font = `${fontSize}px monospace`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.fillText(node.label, x, y + r + fontSize * 0.8);
+  }
 
-  // Keep label at a fixed screen size regardless of zoom level.
-  const fontSize = Math.max(1, 11 / globalScale);
-  ctx.font = `${fontSize}px monospace`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillStyle = "rgba(255,255,255,0.9)";
-  ctx.fillText(node.label, x, y + r + fontSize * 0.8);
+  if (faded) ctx.restore();
 }
 
 // PULSE_SPEED controls how fast dots travel source→target
@@ -113,7 +119,8 @@ const PULSE_SPEED = 0.0004;
 function drawPulse(
   ctx: CanvasRenderingContext2D,
   link: GraphLink,
-  globalTime: number
+  globalTime: number,
+  faded: boolean = false
 ): void {
   const source = link.source as unknown as GraphNode;
   const target = link.target as unknown as GraphNode;
@@ -141,14 +148,15 @@ function drawPulse(
       opacity = 1;
     }
 
-    if (opacity <= 0) continue;
+    const finalAlpha = faded ? opacity * 0.15 : opacity;
+    if (finalAlpha <= 0) continue;
 
     const x = sx + (tx - sx) * t;
     const y = sy + (ty - sy) * t;
     const dotRadius = link.visualStatus === "failing" ? 3 : 2;
 
     ctx.save();
-    ctx.globalAlpha = opacity;
+    ctx.globalAlpha = finalAlpha;
     ctx.beginPath();
     ctx.arc(x, y, dotRadius, 0, 2 * Math.PI);
     ctx.fillStyle = link.color;
@@ -162,7 +170,8 @@ function drawPulse(
 export function drawLink(
   link: GraphLink,
   ctx: CanvasRenderingContext2D,
-  globalTime: number
+  globalTime: number,
+  faded: boolean = false
 ): void {
   const src = link.source as unknown as GraphNode;
   const tgt = link.target as unknown as GraphNode;
@@ -172,6 +181,8 @@ export function drawLink(
   const sy = src.y ?? 0;
   const tx = tgt.x ?? 0;
   const ty = tgt.y ?? 0;
+
+  if (faded) { ctx.save(); ctx.globalAlpha = 0.15; }
 
   // Satellite tether: thin dotted line, no arrowhead, no pulse
   if (link.isTether) {
@@ -183,6 +194,7 @@ export function drawLink(
     ctx.lineTo(tx, ty);
     ctx.stroke();
     ctx.setLineDash([]);
+    if (faded) ctx.restore();
     return;
   }
 
@@ -205,5 +217,7 @@ export function drawLink(
   ctx.fillStyle = link.color;
   ctx.fill();
 
-  drawPulse(ctx, link, globalTime);
+  if (faded) ctx.restore();
+
+  drawPulse(ctx, link, globalTime, faded);
 }
