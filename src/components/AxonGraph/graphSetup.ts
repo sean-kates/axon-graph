@@ -16,6 +16,7 @@ export interface GraphInit {
 
 export interface ForceGraphOptions {
   dagMode?: DagMode;
+  dagLevelDistance?: number;
 }
 
 const BG_COLOR = "#070a10";
@@ -33,7 +34,7 @@ export function initForceGraph(
     .height(height)
     .backgroundColor(BG_COLOR)
     .dagMode(dagMode)
-    .dagLevelDistance(Math.max(120, Math.round(height * 0.18)))
+    .dagLevelDistance(options.dagLevelDistance ?? Math.max(120, Math.round(height * 0.18)))
     .dagNodeFilter((node: object) => !(node as GraphNode).isSatellite)
     .cooldownTicks(Infinity)
     .cooldownTime(Infinity)

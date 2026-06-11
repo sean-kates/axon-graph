@@ -31,6 +31,7 @@ export interface GraphConfig {
   satelliteOrbit?: boolean;
   satelliteOrbitSpeed?: number;
   dagMode?: DagMode;
+  dagLevelDistance?: number;
 }
 
 export interface RawNode {
