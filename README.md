@@ -155,8 +155,7 @@ Fan-in (multiple upstream nodes → one target) is handled at the node level: wh
 {
   "config": {
     "pollInterval": 30000,
-    "dagMode": "td",              // optional — see DAG modes below; default "td"
-    "dagLevelDistance": 150,      // optional — px between DAG layers; default max(120, height×0.18)
+    "dagMode": "td",        // optional — see DAG modes below; default "td"
     "propagation": {
       "decayFactor": 0.5,   // per-hop multiplier on influence score
       "maxDepth": 5         // max hops to propagate
