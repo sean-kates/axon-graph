@@ -196,8 +196,8 @@ export function initForceGraph(
 
   graph.d3Force("charge").strength((node: GraphNode) => node.isSatellite ? 0 : -2000);
   graph.d3Force("link")
-    .distance((link: GraphLink) => link.id.endsWith("__sat_link") ? 18 : 80)
-    .strength((link: GraphLink) => link.id.endsWith("__sat_link") ? 0 : 1);
+    .distance(80)
+    .strength((link: GraphLink) => link.isTether ? 0 : 1);
   graph.d3Force("collide", forceCollide((node: GraphNode) =>
     node.isSatellite ? node.nodeSize / 2 + 2 : Math.max(node.nodeSize + COLLIDE_BASE_PADDING, node.label.length * COLLIDE_LABEL_SCALE + node.nodeSize * 2)
   ));
