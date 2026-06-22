@@ -211,12 +211,6 @@
             "status": "healthy",
             "message": "0 duplicate entry IDs",
             "checkedAt": "2026-05-25T05:03:00Z"
-          },
-          {
-            "name": "currency_codes",
-            "status": "healthy",
-            "message": "All ISO 4217 currency codes valid",
-            "checkedAt": "2026-05-25T05:03:00Z"
           }
         ]
       },
